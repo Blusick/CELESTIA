@@ -1334,7 +1334,7 @@ function syncProfile() { if (wallet.pubkey) send({ type: 'sync', inv: G.inv, ban
 // ── boot ────────────────────────────────────────────────────
 async function startGame(asGuest) {
   document.getElementById('login').classList.add('hidden');
-  for (const id of ['topLeft', 'topRight', 'status', 'toolbar', 'chat', 'resTray', 'btnChat']) document.getElementById(id).classList.remove('hidden');
+  for (const id of ['topLeft', 'topRight', 'status', 'toolbar', 'chat', 'resTray', 'btnChat', 'btnTwitter']) document.getElementById(id).classList.remove('hidden');
   setTrayIcons(); setButtonIcons();
   audio();
   await loadConfig();
@@ -1444,11 +1444,23 @@ function initLoginBg() {
   const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
   resize(); addEventListener('resize', resize);
   const stars = Array.from({ length: 320 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * 6 }));
+  // optional custom background photo (drop /assets/login-bg.jpg). Falls back to procedural starfield.
+  const bg = new Image(); let bgReady = false; bg.onload = () => { bgReady = true; }; bg.src = '/assets/login-bg.jpg';
   const t0 = performance.now();
   function frame() {
     const login = document.getElementById('login');
     if (!login || login.classList.contains('hidden')) return;            // stop once the game starts
     const W = cv.width, H = cv.height, t = (performance.now() - t0) / 1000;
+    if (bgReady) {
+      // cover-fit the custom photo
+      const ir = bg.width / bg.height, cr = W / H;
+      let dw = W, dh = H, dx = 0, dy = 0;
+      if (ir > cr) { dh = H; dw = H * ir; dx = (W - dw) / 2; } else { dw = W; dh = W / ir; dy = (H - dh) / 2; }
+      c.drawImage(bg, dx, dy, dw, dh);
+      // subtle twinkling stars on top
+      for (const s of stars) { const tw = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.3 + s.p)); c.fillStyle = `rgba(225,235,255,${0.4 * s.z * tw})`; c.fillRect(s.x * W, s.y * H, 0.7 + s.z * 1.6, 0.7 + s.z * 1.6); }
+      requestAnimationFrame(frame); return;
+    }
     // deep space
     const g = c.createRadialGradient(W * 0.5, H * 0.44, 0, W * 0.5, H * 0.44, Math.max(W, H) * 0.85);
     g.addColorStop(0, '#0c1430'); g.addColorStop(0.6, '#070b1c'); g.addColorStop(1, '#04050d');

@@ -38,7 +38,7 @@ button{font-family:inherit;cursor:pointer;}
 /* overlays */
 .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(circle at 50% 30%,#1a2c52,#070b16);z-index:50;}
-.login-bg{position:absolute;inset:0;width:100%;height:100%;filter:blur(2px);z-index:0;pointer-events:none;}
+.login-bg{position:absolute;inset:0;width:100%;height:100%;filter:brightness(.82);z-index:0;pointer-events:none;}
 .login-card{position:relative;z-index:1;background:rgba(10,16,34,.55);border:1px solid rgba(130,160,220,.22);backdrop-filter:blur(3px);
   box-shadow:0 14px 50px rgba(0,0,0,.55);padding:34px 40px;text-align:center;border-radius:10px;max-width:90vw;}
 /* elegant celestial wordmark (silver serif with a light streak) */
@@ -47,6 +47,8 @@ button{font-family:inherit;cursor:pointer;}
 .logo span{text-shadow:none;}
 .logo::after{content:'';position:absolute;left:-8%;right:-8%;bottom:-2px;height:2px;background:linear-gradient(90deg,transparent,rgba(185,212,255,.8) 50%,transparent);box-shadow:0 0 14px rgba(150,190,255,.7);}
 .tagline{color:var(--dim);font-size:10px;line-height:1.6;margin:0 0 22px;}
+.x-link{display:inline-block;margin-top:14px;padding:9px 16px;border-radius:8px;background:#1d9bf0;color:#fff;font-weight:800;font-size:12px;text-decoration:none;box-shadow:0 4px 14px rgba(29,155,240,.4);}
+.x-link:hover{background:#1a8cd8;}
 .login-note{color:var(--dim);font-size:8px;margin-top:18px;}
 .login-note b{color:var(--gold);}
 .login-input{display:block;width:240px;max-width:78vw;margin:0 auto 14px;padding:13px 14px;box-sizing:border-box;
