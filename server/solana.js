@@ -5,18 +5,22 @@
 //  the treasury's $CELESTIA balance rose by at least the expected amount.
 // ─────────────────────────────────────────────────────────────
 import { Connection, PublicKey } from '@solana/web3.js';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { config } from './config.js';
 
 const connection = new Connection(config.SOLANA_RPC_URL, 'confirmed');
 const MINT = new PublicKey(config.SKY_TOKEN_MINT);
 const TREASURY = new PublicKey(config.TREASURY_WALLET);
 
-// Treasury's associated token account for $CELESTIA.
-let treasuryAta = null;
-async function getTreasuryAta() {
-  if (!treasuryAta) treasuryAta = await getAssociatedTokenAddress(MINT, TREASURY, true);
-  return treasuryAta;
+// Treasury's associated token accounts (classic Token + Token-2022) for $CELESTIA.
+let treasuryAtas = null;
+async function getTreasuryAtas() {
+  if (!treasuryAtas) {
+    const a = (await getAssociatedTokenAddress(MINT, TREASURY, true, TOKEN_PROGRAM_ID)).toBase58();
+    const b = (await getAssociatedTokenAddress(MINT, TREASURY, true, TOKEN_2022_PROGRAM_ID)).toBase58();
+    treasuryAtas = new Set([a, b]);
+  }
+  return treasuryAtas;
 }
 
 const seenSignatures = new Set(); // prevent replay of one tx for two purchases
@@ -45,21 +49,27 @@ export async function verifyPayment(signature, minAmount, expectedFrom) {
   if (!tx) return { ok: false, error: 'transaction not confirmed yet' + (lastErr ? ' (' + lastErr + ')' : '') };
   if (tx.meta?.err) return { ok: false, error: 'transaction failed on-chain' };
 
-  const ata = (await getTreasuryAta()).toBase58();
   const mint = MINT.toBase58();
+  const treasury = TREASURY.toBase58();
+  const atas = await getTreasuryAtas();
+  // map accountIndex → account pubkey so we can match by the treasury's token account, not only the `owner` field
+  const keys = (tx.transaction.message.accountKeys || []).map(k => (k.pubkey ? k.pubkey.toString() : k.toString()));
+  const sumTreasury = (list) => {
+    let s = 0;
+    for (const b of (list || [])) {
+      if (b.mint !== mint) continue;
+      const acct = keys[b.accountIndex];
+      if (b.owner === treasury || atas.has(acct)) s += Number(b.uiTokenAmount?.uiAmount || 0);
+    }
+    return s;
+  };
+  const received = sumTreasury(tx.meta?.postTokenBalances) - sumTreasury(tx.meta?.preTokenBalances);
 
-  // Compare treasury token balance before vs after.
-  const pre = (tx.meta.preTokenBalances || []).find(
-    b => b.mint === mint && b.owner === TREASURY.toBase58());
-  const post = (tx.meta.postTokenBalances || []).find(
-    b => b.mint === mint && b.owner === TREASURY.toBase58());
-
-  const preAmt = pre ? Number(pre.uiTokenAmount.uiAmount || 0) : 0;
-  const postAmt = post ? Number(post.uiTokenAmount.uiAmount || 0) : 0;
-  const received = postAmt - preAmt;
-
-  if (received + 1e-9 < minAmount)
+  if (received + 1e-9 < minAmount) {
+    const hadBalances = (tx.meta?.postTokenBalances || []).length > 0;
+    console.warn(`[pay] verify failed: received ${received}, expected >= ${minAmount}; tokenBalancesInTx=${hadBalances ? 'yes' : 'NO (RPC returned no token meta — set a dedicated SOLANA_RPC_URL)'}`);
     return { ok: false, error: `treasury received ${received} $CELESTIA, expected >= ${minAmount}` };
+  }
 
   if (expectedFrom) {
     const signers = (tx.transaction.message.accountKeys || [])
@@ -69,7 +79,7 @@ export async function verifyPayment(signature, minAmount, expectedFrom) {
   }
 
   seenSignatures.add(signature);
-  return { ok: true, amount: received, ata, mint };
+  return { ok: true, amount: received, mint };
 }
 
 export { connection, MINT, TREASURY };

@@ -848,6 +848,50 @@ export function drawSword(ctx, x, y, s) {
   ctx.restore();
 }
 
+// ── Pickaxe (ore) — war-pick with double curved head, points up ──
+export function drawPickaxe(ctx, x, y, s) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const steel = '#c2c7cf', steelHi = '#eef1f4', steelDk = '#878d98', wood = '#9a6a3a', woodDk = '#5f3d22', OL = '#26201c';
+  // handle
+  ctx.fillStyle = wood; ctx.beginPath(); ctx.roundRect(-1.7, -20, 3.4, 28, 1.4); ctx.fill();
+  ctx.fillStyle = woodDk; ctx.fillRect(0.3, -20, 1.2, 28);
+  ctx.fillStyle = '#4e3420'; for (let i = 0; i < 3; i++) ctx.fillRect(-1.9, -16 + i * 2.4, 3.8, 1.4);   // wrap below head
+  // central head block
+  ctx.fillStyle = steel; ctx.beginPath(); ctx.roundRect(-4, -25, 8, 6, 1.6); ctx.fill();
+  ctx.fillStyle = steelHi; ctx.fillRect(-4, -25, 8, 1.6);
+  // double curved pick blades (left & right, tips up)
+  for (const dir of [-1, 1]) {
+    ctx.fillStyle = steel; ctx.beginPath();
+    ctx.moveTo(dir * 3.6, -24.5); ctx.quadraticCurveTo(dir * 13, -27, dir * 16.5, -21.5);
+    ctx.quadraticCurveTo(dir * 11, -23.5, dir * 3.6, -21); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = steelDk; ctx.beginPath(); ctx.moveTo(dir * 3.6, -21); ctx.quadraticCurveTo(dir * 11, -23, dir * 16.5, -21.5); ctx.quadraticCurveTo(dir * 11, -21.5, dir * 3.6, -20); ctx.closePath(); ctx.fill();
+  }
+  // top spike
+  ctx.fillStyle = steel; ctx.beginPath(); ctx.moveTo(-2.6, -25); ctx.lineTo(0, -31); ctx.lineTo(2.6, -25); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = OL; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.roundRect(-4, -25, 8, 6, 1.6); ctx.stroke();
+  ctx.restore();
+}
+// ── Axe (wood) — single-bit axe, head up ──
+export function drawAxe(ctx, x, y, s) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.lineJoin = 'round';
+  const steel = '#c8ccd4', steelHi = '#eef1f4', steelDk = '#8b909a', wood = '#9a6a3a', woodDk = '#5f3d22', OL = '#26201c';
+  // handle
+  ctx.fillStyle = wood; ctx.beginPath(); ctx.roundRect(-1.7, -19, 3.4, 27, 1.4); ctx.fill();
+  ctx.fillStyle = woodDk; ctx.fillRect(0.3, -19, 1.2, 27);
+  // socket
+  ctx.fillStyle = steel; ctx.beginPath(); ctx.roundRect(-3.2, -24, 6.4, 6, 1.4); ctx.fill(); ctx.fillStyle = steelHi; ctx.fillRect(-3.2, -24, 6.4, 1.5);
+  // big curved blade on the left
+  ctx.fillStyle = steel; ctx.beginPath(); ctx.moveTo(-3, -24); ctx.quadraticCurveTo(-15, -25.5, -14.5, -15.5); ctx.quadraticCurveTo(-9, -15, -3, -18); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = steelHi; ctx.beginPath(); ctx.moveTo(-3, -23.5); ctx.quadraticCurveTo(-13, -24.5, -13.5, -17); ctx.quadraticCurveTo(-12, -17.5, -3, -19); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = steelDk; ctx.beginPath(); ctx.moveTo(-14.5, -15.5); ctx.quadraticCurveTo(-9, -15, -3, -18); ctx.lineTo(-3, -16.5); ctx.quadraticCurveTo(-9, -13.5, -14, -14.5); ctx.closePath(); ctx.fill();
+  // small poll on the right
+  ctx.fillStyle = steel; ctx.beginPath(); ctx.moveTo(3, -23.5); ctx.quadraticCurveTo(9, -24.5, 9.5, -20.5); ctx.lineTo(3, -19.5); ctx.closePath(); ctx.fill();
+  // top knob
+  ctx.fillStyle = steel; ctx.beginPath(); ctx.arc(0, -25.5, 2, 0, 7); ctx.fill();
+  ctx.strokeStyle = OL; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.roundRect(-3.2, -24, 6.4, 6, 1.4); ctx.stroke();
+  ctx.restore();
+}
+
 // ── Creatures (smooth anime / chibi) ────────────────────────
 export function drawCreature(ctx, x, y, c, frame) {
   const bob = Math.sin(frame * 0.6) * 0.7;

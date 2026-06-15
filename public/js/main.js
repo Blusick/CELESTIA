@@ -380,7 +380,8 @@ function harvest(n) {
   if (invCount() >= G.invMax) { if (performance.now() - (n._t || 0) > 1500) toast('Inventory full (300). Sell or bank items.'); n._t = performance.now(); return; }
   n._t = performance.now(); n.hp--;
   const res = n.res || n.kind, amt = n.yield || 1;
-  G.inv[res] = (G.inv[res] || 0) + amt; addXP(3); sfx('hit'); startSwing(n.x, n.y);
+  const tool = res === 'wood' ? 'axe' : (res === 'iron' || res === 'gold') ? 'pickaxe' : 'sword';
+  G.inv[res] = (G.inv[res] || 0) + amt; addXP(3); sfx('hit'); startSwing(n.x, n.y, tool);
   spawnFloater('+' + amt + ' ' + res, n.x, n.y, '#fff');
   if (n.hp <= 0) { n.dead = true; n.respawn = performance.now() + 20000; addXP(4); farmTarget = null; }
   refreshHUD(); refreshActivePanel();
@@ -427,7 +428,8 @@ const markers = [];
 const smoke = [];
 let smokeT = 0;
 let swing = 0, swingAng = 0;                 // sword swing animation
-function startSwing(tx, ty) { swing = 16; swingAng = Math.atan2(ty - G.me.y, tx - G.me.x); }
+let swingTool = 'sword';
+function startSwing(tx, ty, tool = 'sword') { swing = 16; swingAng = Math.atan2(ty - G.me.y, tx - G.me.x); swingTool = tool; }
 function spawnFloater(text, x, y, color) { floaters.push({ text, x, y, color, life: 1 }); }
 function spawnSmoke(x, y) {
   if (frameT - smokeT < 3) return; smokeT = frameT;
@@ -630,7 +632,10 @@ function render() {
     const hx = G.me.x + Math.cos(swingAng) * 6, hy = G.me.y - 2 + Math.sin(swingAng) * 6;
     ctx.save(); ctx.translate(hx, hy); ctx.rotate(swingAng + Math.PI / 2 + arc);
     ctx.globalAlpha = 0.25; ctx.strokeStyle = '#eaf2ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 22, -1.2, 1.2); ctx.stroke(); ctx.globalAlpha = 1; // slash arc
-    S.drawSword(ctx, 0, 0, 0.95); ctx.restore();
+    if (swingTool === 'pickaxe') S.drawPickaxe(ctx, 0, 0, 0.95);
+    else if (swingTool === 'axe') S.drawAxe(ctx, 0, 0, 0.95);
+    else S.drawSword(ctx, 0, 0, 0.95);
+    ctx.restore();
     swing--;
   }
 
