@@ -182,7 +182,7 @@ function handle(ws, p, m) {
       if (m.appearance) p.appearance = { ...p.appearance, ...m.appearance };
       if (m.gear) p.gear = m.gear;                                   // worn equipment (for visible armour)
       if (m.ship) p.ship = m.ship;
-      if (typeof m.wallet === 'string' && m.wallet) {
+      if (typeof m.wallet === 'string' && m.wallet && m.wallet !== p.wallet) {   // only on FIRST wallet link, not every equip/profile update
         p.wallet = m.wallet;
         const sv = W.state.profiles[p.wallet];                       // restore a saved profile
         if (sv) {

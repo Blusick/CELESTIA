@@ -1070,9 +1070,9 @@ const NPC_LINES = {
 function npcHash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
 function npcSpeech(f) {
   const lines = NPC_LINES[f.role]; if (!lines) return null;
-  const tsec = performance.now() / 1000 + (npcHash(f.name) % 20);
-  if (tsec % 20 >= 10) return null;                       // talk 10s, silent 10s
-  return lines[Math.floor(tsec / 20) % lines.length];
+  const tsec = performance.now() / 1000 + (npcHash(f.name) % 40);
+  if (tsec % 40 >= 5) return null;                        // talk 5s every 40s
+  return lines[Math.floor(tsec / 40) % lines.length];
 }
 function drawSpeechBubble(cx, by, text) {
   ctx.font = '9px "Vanilla Caramel", sans-serif'; ctx.textAlign = 'left';

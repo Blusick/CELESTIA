@@ -111,14 +111,7 @@ register({
     features.push({ t: 'colony', tx: tcx, ty: tcy - 2 });
     features.push({ t: 'npc', tx: tcx, ty: tcy, name: 'Tom the Colonist', role: 'colonise', color: '#7fb0d0', shop: 1 });
     spots.push({ x: tcx, y: tcy });
-    // a few towers in remaining gaps
-    let placed = 0, guard = 0;
-    while (placed < 6 && guard++ < 600) {
-      const x = 2 + (rand() * (W - 4) | 0), y = 2 + (rand() * (H - 4) | 0);
-      if (cells[y][x] !== 'm' || inAr(x, y)) continue;
-      if (features.some(f => Math.abs(f.tx - x) < 4 && Math.abs(f.ty - y) < 4)) continue;
-      features.push({ t: 'tower', tx: x, ty: y, v: rand() * 3 | 0 }); placed++;
-    }
+    // (blinking blue towers removed)
     // lamps along the avenues (not under the arena)
     for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) for (let r = 4; r < reach; r += 5) { const x = cx + dx * r + (dx ? 0 : 1), y = cy + dy * r + (dy ? 0 : 1); if (inb(cells, x, y) && !inAr(x, y) && cells[y][x] === 'p') features.push({ t: 'lamp', tx: x, ty: y }); }
   },
@@ -141,8 +134,7 @@ register({
   build(cells, features, rand) {
     stamp(cells, cells[0].length * 0.7, cells.length * 0.35, 2.4, 'n', ['r']); // icy crystal shelf
     scatter(cells, features, 'crystal', 7, ['r', 'n'], rand);
-    scatter(cells, features, 'rig', 3, ['r'], rand);
-    scatter(cells, features, 'rock', 8, ['r'], rand);
+    scatter(cells, features, 'rock', 8, ['r'], rand);   // (decorative mining rigs removed)
     features.push({ t: 'workshop', kind: 'miner', tx: cells[0].length * 0.5 | 0, ty: (cells.length * 0.55 | 0) - 2 });
     features.push({ t: 'npc', tx: cells[0].length * 0.5 | 0, ty: cells.length * 0.55 | 0, name: 'Rocky Pete', role: 'miner', color: '#9aa0b0', shop: 1 });
   },
@@ -152,9 +144,7 @@ register({
   type: 'creature', biome: 'agri', level: 1, x: 31, y: 85, w: 26, h: 24, base: 'g', rough: 0.26,
   build(cells, features, rand) {
     stamp(cells, cells[0].length * 0.35, cells.length * 0.5, 2.0, 'w', ['g']);
-    features.push({ t: 'greenhouse', tx: cells[0].length * 0.6 | 0, ty: cells.length * 0.4 | 0 });
-    scatter(cells, features, 'farm', 5, ['g'], rand);
-    scatter(cells, features, 'tree', 26, ['g'], rand);   // lots of farmable pines on random tiles
+    scatter(cells, features, 'tree', 26, ['g'], rand);   // lots of farmable pines on random tiles (greenhouse & farm plots removed)
     scatter(cells, features, 'bigtree', 4, ['g'], rand); // rare big trees → 2× wood
     scatter(cells, features, 'flower', 12, ['g'], rand);
     features.push({ t: 'workshop', kind: 'lumberjack', tx: cells[0].length * 0.5 | 0, ty: (cells.length * 0.5 | 0) - 2 });
@@ -176,10 +166,7 @@ register({
   type: 'creature', biome: 'build', level: 2, x: 80, y: 129, w: 28, h: 20, base: 'd', rough: 0.28,
   build(cells, features, rand) {
     for (let y = 0; y < cells.length; y++) for (let x = 0; x < cells[0].length; x++) if (cells[y][x] === 'd' && (x + y) % 2 === 0 && Math.random() < 0.04) cells[y][x] = 'm';
-    features.push({ t: 'crane', tx: cells[0].length * 0.45 | 0, ty: cells.length * 0.4 | 0 });
-    features.push({ t: 'crane', tx: cells[0].length * 0.65 | 0, ty: cells.length * 0.6 | 0 });
-    scatter(cells, features, 'tower', 4, ['d', 'm'], rand, { v: 1, build: 1 });
-    scatter(cells, features, 'rock', 5, ['d'], rand);
+    scatter(cells, features, 'rock', 5, ['d'], rand);   // (decorative cranes & towers removed)
     features.push({ t: 'workshop', kind: 'builder', tx: cells[0].length * 0.5 | 0, ty: (cells.length * 0.55 | 0) - 2 });
     features.push({ t: 'npc', tx: cells[0].length * 0.5 | 0, ty: cells.length * 0.55 | 0, name: 'Forge Fred', role: 'builder', color: '#b0843c', shop: 1 });
   },
