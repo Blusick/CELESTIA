@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>CELESTIA — a pixel MMO in the sky</title>
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<canvas id="game"></canvas>
+<audio id="bgm" src="/assets/music.mp3" loop preload="auto"></audio>
+
+<!-- ── LOGIN ───────────────────────────────────────────── -->
+<div id="login" class="overlay">
+  <canvas id="loginBg" class="login-bg"></canvas>
+  <div class="login-card">
+    <h1 class="logo">CELES<span>TIA</span></h1>
+    <p class="tagline">Build your islands in the clouds.</p>
+    <input id="userName" class="login-input" type="text" maxlength="16" placeholder="Choose a username" autocomplete="off">
+    <button id="btnConnect" class="btn btn-phantom">Connect Phantom</button>
+    <button id="btnGuest" class="btn btn-ghost">Play as guest</button>
+    <p class="login-note">Powered by <b>$CELESTIA</b> on Solana</p>
+  </div>
+</div>
+
+<!-- ── TOP-LEFT controls ───────────────────────────────── -->
+<div id="topLeft" class="hud hidden">
+  <div style="display:flex;gap:8px;">
+    <button id="btnBuyTerritory" class="pill pill-gold"><img class="bicon" data-ic="coin"> Buy Territory</button>
+    <button id="btnHome" class="pill pill-home"><img class="bicon" data-ic="home"> HOME</button>
+    <button id="btnChat" class="pill" title="Toggle chat">💬 CHAT</button>
+  </div>
+  <div id="onlineChip" class="wallet-chip" style="margin-top:8px;color:var(--grn);display:inline-block;">🟢 1 online</div>
+</div>
+
+<!-- ── TOP-RIGHT wallet + sound ────────────────────────── -->
+<div id="topRight" class="hud hidden">
+  <div id="balance" class="wallet-chip" title="$CELESTIA balance">— $CELESTIA</div>
+  <div id="walletChip" class="wallet-chip">Guest</div>
+  <button id="btnDisconnect" class="wallet-chip" title="Disconnect & return to login" style="cursor:pointer;color:var(--red)">Disconnect</button>
+  <button id="btnSound" class="icon-btn" title="Toggle sound"><img class="bicon" data-ic="sound"></button>
+</div>
+
+<!-- ── PLAYER STATUS (top-center) ──────────────────────── -->
+<div id="status" class="hud hidden">
+  <div class="status-row">
+    <span id="statName">Pilot</span>
+    <span id="statLevel" class="lvl">Lv 1</span>
+  </div>
+  <div class="bar hp"><div id="hpFill" class="fill"></div><span id="hpText">100/100</span></div>
+  <div class="bar xp"><div id="xpFill" class="fill"></div><span id="xpText">0/95 XP</span></div>
+</div>
+
+<!-- ── BOTTOM TOOLBAR ──────────────────────────────────── -->
+<div id="toolbar" class="hud hidden">
+  <button class="tool" data-panel="inventory"><img class="ticon" data-ic="inventory"><span>Inventory</span></button>
+  <button class="tool" data-panel="bank"><img class="ticon" data-ic="bank"><span>Bank</span></button>
+  <button class="tool" data-panel="alchemist"><img class="ticon" data-ic="alchemist"><span>Alchemist</span></button>
+  <button class="tool" data-panel="marketplace"><img class="ticon" data-ic="market"><span>Marketplace</span></button>
+  <button class="tool" data-panel="army"><img class="ticon" data-ic="army"><span>Army</span></button>
+  <button class="tool" data-panel="shipyard"><img class="ticon" data-ic="ship"><span>Shipyard</span></button>
+  <button class="tool" data-panel="colonise"><img class="ticon" data-ic="planet"><span>Colonise</span></button>
+</div>
+
+<!-- ── CHAT ────────────────────────────────────────────── -->
+<div id="chat" class="hud hidden">
+  <div id="chatTabs" class="chat-tabs">
+    <button data-ch="general" class="active">GENERAL</button>
+    <button data-ch="private">PRIVATE <span class="unread" id="privUnread"></span></button>
+  </div>
+  <div id="chatLog" class="chat-log"></div>
+  <form id="chatForm" class="chat-input">
+    <input id="chatText" maxlength="200" placeholder="Press Enter to chat…" autocomplete="off" />
+  </form>
+</div>
+
+<!-- ── RESOURCE TRAY (bottom-center) ───────────────────── -->
+<div id="resTray" class="hud hidden">
+  <div class="res"><img id="icIron" width="20" height="20"><span id="rIron">0</span></div>
+  <div class="res"><img id="icMeat" width="20" height="20"><span id="rMeat">0</span></div>
+  <div class="res"><img id="icWood" width="20" height="20"><span id="rWood">0</span></div>
+</div>
+
+<!-- ── MODALS ──────────────────────────────────────────── -->
+<div id="modalRoot"></div>
+
+<!-- death banner -->
+<div id="deathBanner" class="overlay hidden">
+  <div class="login-card">
+    <h2>You were defeated</h2>
+    <p class="tagline">You drift back to the fountain at Skyhaven…</p>
+    <button id="btnRespawn" class="btn btn-phantom">Return to fountain</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

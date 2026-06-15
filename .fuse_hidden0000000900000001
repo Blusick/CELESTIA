@@ -1,0 +1,9 @@
+bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)
+[world] loaded 0 tiles, 1 listings, 3 profiles
+[world] spawned 59 creatures
+
+  🛸  Skyland running → http://localhost:3000
+      $SKY mint:  8fa3FLWEk4Y7XLAGsQT8tpA8EcfsfQ9ZgEQVYcAvpump
+      treasury:   DwDoTqae91mTDMskLJgvjwiXz8rsTADdTAxH9YeA4Niq
+      cluster:    mainnet-beta
+
