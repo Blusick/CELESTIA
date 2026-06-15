@@ -146,8 +146,8 @@ const gearStat = it => `+${it.bonus} ${SLOT_STAT[it.slot] || ''}`;
 function eqSlotHTML([key, label]) {
   const v = G.equip?.[key];
   const title = (v && typeof v === 'object') ? `${gearName(v)} (${gearStat(v)})` : label;
-  const inner = v ? `<img src="${slotIconURL(v)}" style="width:24px;height:24px;image-rendering:auto">` : '<span class="eqx">+</span>';
-  return `<div class="slot eqslot${v ? ' filled' : ''}" data-eslot="${key}"${v ? ' draggable="true"' : ''} title="${title}"><span class="eqlab">${label}</span>${inner}</div>`;
+  const inner = v ? `<img src="${slotIconURL(v)}" style="width:28px;height:28px;image-rendering:auto">` : '<span class="eqx">+</span>';
+  return `<div class="slot eqslot${v ? ' filled' : ''}${key === 'shoes' ? ' eqslot-wide' : ''}" data-eslot="${key}"${v ? ' draggable="true"' : ''} title="${title}"><span class="eqlab">${label}</span>${inner}</div>`;
 }
 PANELS.inventory = () => {
   const resAll = [['iron', G.inv.iron], ['meat', G.inv.meat], ['wood', G.inv.wood], ['plank', G.inv.plank], ['ingot', G.inv.ingot], ['gold', G.inv.gold], ['goldingot', G.inv.goldingot], ['cookedmeat', G.inv.cookedmeat], ['sword', G.inv.sword], ['goldsword', G.inv.goldsword]];
@@ -155,13 +155,13 @@ PANELS.inventory = () => {
   const used = G.actions.invCount();
   const slots = res.map(([k, v]) => {
     const eq = EQUIP_OF[k], consume = k === 'cookedmeat', label = k === 'cookedmeat' ? 'cooked' : k;
-    return `<div class="slot${eq ? ' equippable' : ''}${consume ? ' consumable' : ''}" data-item="${k}"${eq ? ' draggable="true"' : ''}${consume ? ` data-consume="${k}"` : ''}><img src="${itemIcon(k)}" style="width:22px;height:22px;image-rendering:auto"><span style="font-size:6px">${label}</span><b>${v}</b></div>`;
+    return `<div class="slot${eq ? ' equippable' : ''}${consume ? ' consumable' : ''}" data-item="${k}"${eq ? ' draggable="true"' : ''}${consume ? ` data-consume="${k}"` : ''}><img src="${itemIcon(k)}" style="width:26px;height:26px;image-rendering:auto"><span style="font-size:11px;font-weight:700">${label}</span><b>${v}</b></div>`;
   }).join('');
   // stack identical gear (same creature + slot) into one cell with a count
   const groups = {};
   for (const it of (G.inv.gear || [])) { const key = it.slot + '|' + it.src + '|' + it.bonus; (groups[key] ||= []).push(it); }
   const gear = Object.values(groups).map(arr => { const it = arr[0], n = arr.length;
-    return `<div class="slot gearitem" data-gear="${it.id}" draggable="true" title="${gearName(it)} (${gearStat(it)})"><img src="${gearIconURL(it)}" style="width:20px;height:20px;image-rendering:auto"><span style="font-size:5.5px;text-align:center;line-height:1.05">${gearName(it)}<br><span style="color:var(--gold)">${gearStat(it)}</span></span>${n > 1 ? `<b>${n}</b>` : ''}</div>`;
+    return `<div class="slot gearitem" data-gear="${it.id}" draggable="true" title="${gearName(it)} (${gearStat(it)})"><img src="${gearIconURL(it)}" style="width:24px;height:24px;image-rendering:auto"><span style="font-size:9px;font-weight:700;text-align:center;line-height:1.1">${gearName(it)}<br><span style="color:var(--gold)">${gearStat(it)}</span></span>${n > 1 ? `<b>${n}</b>` : ''}</div>`;
   }).join('');
   const count = res.length + Object.keys(groups).length;
   const pad = Array.from({ length: Math.max(0, 24 - count) }, () => '<div class="slot"></div>').join('');

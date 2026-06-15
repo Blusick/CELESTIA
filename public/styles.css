@@ -56,7 +56,7 @@ button{font-family:inherit;cursor:pointer;}
 .login-input:focus{border-color:var(--gold);}
 
 .btn{display:block;width:240px;max-width:78vw;margin:10px auto;padding:14px;border:none;border-radius:4px;
-  font-size:11px;color:#0b1020;box-shadow:0 5px 0 rgba(0,0,0,.45);transition:transform .05s;}
+  font-size:14px;font-weight:800;color:#0b1020;box-shadow:0 5px 0 rgba(0,0,0,.45);transition:transform .05s;}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.45);}
 .btn-phantom{background:linear-gradient(#b79bff,#7e5bff);color:#fff;}
 .btn-ghost{background:#39456e;color:var(--txt);}
@@ -68,7 +68,7 @@ button{font-family:inherit;cursor:pointer;}
 #status{top:14px;left:50%;transform:translateX(-50%);width:260px;max-width:60vw;
   background:var(--panel);border:3px solid var(--edge);padding:8px 10px;border-radius:5px;box-shadow:0 4px 0 #0a0f1f;}
 
-.pill{border:3px solid var(--edge);border-radius:5px;padding:10px 12px;font-size:10px;color:#0b1020;
+.pill{border:3px solid var(--edge);border-radius:5px;padding:11px 14px;font-size:13px;font-weight:800;color:#0b1020;
   box-shadow:0 4px 0 #0a0f1f;}
 .pill:active{transform:translateY(2px);box-shadow:0 2px 0 #0a0f1f;}
 .pill-gold{background:var(--gold);}
@@ -93,7 +93,7 @@ button{font-family:inherit;cursor:pointer;}
 .tool{background:var(--panel);border:3px solid var(--edge);border-radius:6px;color:var(--txt);
   width:74px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
   font-size:16px;box-shadow:0 4px 0 #0a0f1f;}
-.tool span{font-size:7px;color:var(--dim);}
+.tool span{font-size:11px;font-weight:800;color:var(--dim);}
 .tool:active{transform:translateY(2px);box-shadow:0 2px 0 #0a0f1f;}
 .tool.active{border-color:var(--gold);}
 
@@ -132,28 +132,29 @@ label{font-size:8px;color:var(--dim);}
 input[type=text],input[type=number],select{font-family:inherit;font-size:9px;padding:8px;background:#10162b;
   border:2px solid var(--edge);color:var(--txt);border-radius:3px;outline:none;}
 .field{display:flex;flex-direction:column;gap:5px;}
-.cta{background:var(--gold);border:3px solid var(--edge);color:#0b1020;border-radius:4px;padding:11px 14px;font-size:10px;box-shadow:0 4px 0 #0a0f1f;}
+.cta{background:var(--gold);border:3px solid var(--edge);color:#0b1020;border-radius:4px;padding:11px 14px;font-size:13px;font-weight:800;box-shadow:0 4px 0 #0a0f1f;}
 .cta:active{transform:translateY(2px);box-shadow:0 2px 0 #0a0f1f;}
 .cta.sky{background:var(--sky);color:#04223f;}
 .muted{color:var(--dim);font-size:8px;line-height:1.7;}
 
 /* inventory grid */
-.inv{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+.inv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
 .slot{aspect-ratio:1;background:#10162b;border:2px solid var(--edge);border-radius:4px;display:flex;
-  flex-direction:column;align-items:center;justify-content:center;font-size:7px;color:var(--dim);position:relative;}
-.slot b{position:absolute;bottom:3px;right:4px;font-size:7px;color:#fff;}
+  flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;color:var(--dim);position:relative;}
+.slot b{position:absolute;bottom:3px;right:5px;font-size:12px;font-weight:800;color:#fff;}
 
 .slot.equippable{cursor:grab;border-color:#caa84a;}
 .slot.consumable{cursor:pointer;border-color:#c47a4a;}
 .locked{opacity:.5;filter:grayscale(.75);}
 .slot.equippable:hover{border-color:var(--gold);}
 
-/* equipment slots (paper-doll) */
-.equips{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px;width:104px;}
+/* equipment slots (paper-doll): Top|Bottom / Weapon|Shield / Shoes (centered) */
+.equips{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px;width:104px;justify-content:center;}
 .eqslot{aspect-ratio:1;cursor:pointer;}
 .eqslot.filled{border-color:var(--gold);background:#161e38;}
-.eqslot .eqlab{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:5px;color:var(--dim);}
-.eqslot .eqx{font-size:14px;color:#39435e;}
+.eqslot.eqslot-wide{grid-column:1 / -1;width:50%;justify-self:center;}
+.eqslot .eqlab{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:var(--dim);}
+.eqslot .eqx{font-size:18px;color:#39435e;}
 .eqslot.dragover{border-color:var(--gold);}
 
 /* character stats */
@@ -192,6 +193,6 @@ th{color:var(--gold);}
 .count{font-size:11px;color:var(--gold);}
 
 @media(max-width:640px){
-  .tool{width:56px;height:54px;font-size:13px;} .tool span{font-size:6px;}
+  .tool{width:56px;height:54px;font-size:13px;} .tool span{font-size:9px;font-weight:800;}
   #chat{width:200px;} .logo{font-size:26px;}
 }

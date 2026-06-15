@@ -35,9 +35,7 @@
 
 <!-- ── TOP-RIGHT wallet + sound ────────────────────────── -->
 <div id="topRight" class="hud hidden">
-  <div id="balance" class="wallet-chip" title="$CELESTIA balance">— $CELESTIA</div>
-  <div id="walletChip" class="wallet-chip">Guest</div>
-  <button id="btnDisconnect" class="wallet-chip" title="Disconnect & return to login" style="cursor:pointer;color:var(--red)">Disconnect</button>
+  <button id="btnDisconnect" class="wallet-chip" title="Leave & return to login" style="cursor:pointer;color:var(--red)">Leave</button>
   <button id="btnSound" class="icon-btn" title="Toggle sound"><img class="bicon" data-ic="sound"></button>
 </div>
 
@@ -63,7 +61,8 @@
 </div>
 
 <!-- ── CHAT ────────────────────────────────────────────── -->
-<button id="btnChat" class="pill hud hidden" title="Toggle chat" style="position:fixed;left:14px;bottom:14px;z-index:30">💬 CHAT</button>
+<button id="btnChat" class="pill hud hidden" title="Toggle chat" style="position:fixed;left:14px;bottom:54px;z-index:30">💬 CHAT</button>
+<button id="btnTwitter" class="pill hud hidden" title="Follow us on X" style="position:fixed;left:14px;bottom:14px;z-index:30;background:#1d9bf0;color:#fff">𝕏 Twitter</button>
 <div id="chat" class="hud hidden">
   <div id="chatTabs" class="chat-tabs">
     <button data-ch="general" class="active">GENERAL</button>

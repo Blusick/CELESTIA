@@ -1323,9 +1323,10 @@ const esc = s => s.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&am
 
 // ── balance ─────────────────────────────────────────────────
 async function refreshBalance() {
-  if (!wallet.connected) { document.getElementById('balance').textContent = '— $CELESTIA'; return; }
+  const el = document.getElementById('balance'); if (!el) return;
+  if (!wallet.connected) { el.textContent = '— $CELESTIA'; return; }
   const b = await skyBalance();
-  document.getElementById('balance').textContent = Math.floor(b).toLocaleString() + ' $CELESTIA';
+  el.textContent = Math.floor(b).toLocaleString() + ' $CELESTIA';
 }
 
 function syncProfile() { if (wallet.pubkey) send({ type: 'sync', inv: G.inv, bank: G.bank, equip: G.equip, level: G.level, xp: G.xp, xpNeed: G.xpNeed, maxHp: G.maxHp, stats: G.stats, statPoints: G.statPoints, res: effStat('resistance'), ownedShips: G.ownedShips, ship: G.ship }); }
@@ -1344,7 +1345,7 @@ async function startGame(asGuest) {
   // periodically persist inventory / bank / equipment (wallet players only)
   setInterval(syncProfile, 8000);
   window.addEventListener('beforeunload', syncProfile);
-  if (!asGuest) { document.getElementById('walletChip').textContent = wallet.pubkey.slice(0, 4) + '…' + wallet.pubkey.slice(-4); refreshBalance(); }
+  document.getElementById('btnTwitter').onclick = () => window.open('https://x.com/', '_blank');   // ← put your X/Twitter URL here
   addChat('', 'Welcome to Central City! Left-click to move · fly your ship across the void to reach the zones · click creatures to fight, nodes to farm.', true);
   addChat('', 'Press Tab for inventory. Locked zones (planets, Exploration) cannot be entered yet.', true);
   refreshHUD();
@@ -1418,7 +1419,6 @@ document.getElementById('btnSound').onclick = () => {
   const bgm = document.getElementById('bgm'); if (bgm) { if (G.soundOn) bgm.play().catch(() => {}); else bgm.pause(); }
 };
 document.getElementById('btnRespawn').onclick = () => send({ type: 'respawn' });
-document.getElementById('walletChip').onclick = async () => { if (wallet.connected) { await walletDisconnect(); document.getElementById('walletChip').textContent = 'Guest'; refreshBalance(); } };
 document.getElementById('btnDisconnect').onclick = async () => {
   try { syncProfile(); } catch {}                                   // persist progress before leaving
   try { if (wallet.connected) await walletDisconnect(); } catch {}
