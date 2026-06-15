@@ -307,11 +307,35 @@ setInterval(() => {
 }, 1000);
 setInterval(broadcastArena, 1000);
 
+// ── lightweight per-tick player state (static data — name/appearance/gear —
+//    is sent only on join/profile, not every tick) ──
+function pubLite(p) { return { id: p.id, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, moving: p.moving, inAir: p.inAir, level: p.level, inArena: p.inArena }; }
+// area-of-interest: each client only receives entities near it (covers full dezoom)
+const VIEW_PX = 64 * W.TILE;
+let syncCount = 0;
+function sendWorldUpdates() {
+  syncCount++;
+  const full = (syncCount % 10 === 0);                 // ~once per second: resend idle players to correct any drift
+  const plist = [...players.values()];
+  for (const p of plist) p._send = full || p.moving || p.moving !== p._sm || Math.abs(p.x - (p._sx || 0)) > 1 || Math.abs(p.y - (p._sy || 0)) > 1;
+  const clist = []; for (const c of W.creatures.values()) if (!c.dead) clist.push(c);
+  for (const [ws, me] of players) {
+    if (ws.readyState !== 1) continue;
+    const ps = [];
+    for (const p of plist) { if (p.id === me.id || !p._send) continue; if (Math.abs(p.x - me.x) < VIEW_PX && Math.abs(p.y - me.y) < VIEW_PX) ps.push(pubLite(p)); }
+    send(ws, { type: 'players', list: ps });
+    const cs = [];
+    for (const c of clist) { if (Math.abs(c.x - me.x) < VIEW_PX && Math.abs(c.y - me.y) < VIEW_PX) cs.push({ id: c.id, x: Math.round(c.x), y: Math.round(c.y), target: c.target, aggressive: c.aggressive }); }
+    if (cs.length) send(ws, { type: 'creatures', list: cs });
+  }
+  for (const p of plist) { p._sx = p.x; p._sy = p.y; p._sm = p.moving; }
+}
+
 // ── Game loop: creature AI + combat on players ───────────────
 const TICK = 1000 / 20;
+let netTick = 0;
 setInterval(() => {
   const now = Date.now();
-  const moved = [];
   for (const c of W.creatures.values()) {
     if (c.dead) { if (now >= c.respawnAt) { W.respawnCreature(c); broadcast({ type: 'creatureSpawn', creature: c }); } continue; }
     const isl = W.ISLANDS.find(i => i.id === c.islandId);
@@ -344,11 +368,9 @@ setInterval(() => {
     }
     // keep inside leash bounds always
     c.x = clamp(c.x, b.x0, b.x1); c.y = clamp(c.y, b.y0, b.y1);
-    moved.push({ id: c.id, x: Math.round(c.x), y: Math.round(c.y), target: c.target, aggressive: c.aggressive });
   }
-  if (moved.length) broadcast({ type: 'creatures', list: moved });
-  // sync player positions
-  broadcast({ type: 'players', list: [...players.values()].map(pub) });
+  netTick++;
+  if (netTick % 2 === 0) sendWorldUpdates();   // network at 10 Hz, interest-filtered & compact
 }, TICK);
 
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }

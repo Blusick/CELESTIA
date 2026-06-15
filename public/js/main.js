@@ -529,8 +529,15 @@ setInterval(() => {
 
 // ── rendering ───────────────────────────────────────────────
 let frameT = 0;
+// smooth remote players & creatures toward their last server position (updates arrive at 10 Hz)
+function interpolateEntities() {
+  const k = 0.3;
+  for (const p of G.players.values()) { if (p.id === G.me?.id || p.tx == null) continue; p.x += (p.tx - p.x) * k; p.y += (p.ty - p.y) * k; }
+  for (const c of G.creatures.values()) { if (c.tx == null || c.x == null) continue; c.x += (c.tx - c.x) * k; c.y += (c.ty - c.y) * k; }
+}
 function render() {
   frameT += 1;
+  interpolateEntities();
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   // deep-space gradient
   const g = ctx.createLinearGradient(0, 0, 0, VH);
@@ -1242,9 +1249,9 @@ function wireNet() {
   on('join', m => { G.players.set(m.player.id, m.player); setOnline(m.online); });
   on('leave', m => { G.players.delete(m.id); setOnline(m.online); });
   on('kicked', m => { toast('Disconnected: ' + (m.reason || 'another session opened'), 6000); });
-  on('players', m => { for (const p of m.list) { if (p.id === G.me?.id) continue; const ex = G.players.get(p.id) || {}; G.players.set(p.id, { ...ex, ...p }); } });
-  on('profile', m => { if (m.id !== G.me?.id) G.players.set(m.id, m.player); });
-  on('creatures', m => { for (const u of m.list) { const c = G.creatures.get(u.id); if (c) { c.x = u.x; c.y = u.y; c.target = u.target; c.aggressive = u.aggressive; } } });
+  on('players', m => { for (const p of m.list) { if (p.id === G.me?.id) continue; const ex = G.players.get(p.id); if (ex) { ex.tx = p.x; ex.ty = p.y; ex.dir = p.dir; ex.moving = p.moving; ex.inAir = p.inAir; if (p.level != null) ex.level = p.level; if (p.inArena != null) ex.inArena = p.inArena; } else G.players.set(p.id, { ...p, tx: p.x, ty: p.y }); } });
+  on('profile', m => { if (m.id !== G.me?.id) { const ex = G.players.get(m.id) || {}; G.players.set(m.id, { ...ex, ...m.player, tx: ex.tx, ty: ex.ty }); } });
+  on('creatures', m => { for (const u of m.list) { const c = G.creatures.get(u.id); if (c) { c.tx = u.x; c.ty = u.y; if (c.x == null) { c.x = u.x; c.y = u.y; } c.target = u.target; c.aggressive = u.aggressive; } } });
   on('creatureHp', m => { const c = G.creatures.get(m.cid); if (c) c.hp = m.hp; });
   on('creatureDead', m => { const c = G.creatures.get(m.cid); if (c) c.dead = true; });
   on('creatureSpawn', m => G.creatures.set(m.creature.id, m.creature));
