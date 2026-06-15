@@ -1,0 +1,25 @@
+# Render Blueprint — deploy CELESTIA as a Node web service (WebSocket-capable)
+# Render injects PORT automatically; the server reads it via process.env.PORT.
+services:
+  - type: web
+    name: celestia
+    runtime: node
+    plan: free                 # bump to "starter" for no cold-starts + a persistent disk
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      # Strongly recommended: a dedicated RPC (Helius / QuickNode / Alchemy).
+      # The public mainnet RPC is rate-limited and may 403 under load.
+      - key: SOLANA_RPC_URL
+        sync: false            # set the value in the Render dashboard
+      # These already have defaults in server/config.js — override only if needed:
+      # - key: TREASURY_WALLET
+      #   value: DwDoTqae91mTDMskLJgvjwiXz8rsTADdTAxH9YeA4Niq
+      # - key: SKY_TOKEN_MINT
+      #   value: 8fa3FLWEk4Y7XLAGsQT8tpA8EcfsfQ9ZgEQVYcAvpump
+    # Optional: keep player saves across restarts/deploys (paid plans only).
+    # disk:
+    #   name: data
+    #   mountPath: /opt/render/project/src/data
+    #   sizeGB: 1

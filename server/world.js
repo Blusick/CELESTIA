@@ -104,6 +104,8 @@ register({
       features.push({ t: 'npc', tx: bx, ty: by, name: s.name, role: s.role, color: s.color, shop: 1 });
       spots.push({ x: bx, y: by });
     }
+    // Furnace just NORTH of the arena (no NPC — opens on click)
+    features.push({ t: 'furnace', tx: cx, ty: AR.y0 - 3 });
     // Tom the Colonist + his geodesic dome habitat on the WEST side of the city
     const tcx = 9, tcy = (H * 0.5) | 0;
     features.push({ t: 'colony', tx: tcx, ty: tcy - 2 });

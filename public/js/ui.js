@@ -65,6 +65,16 @@ function workshopPanel(id) {
     <div id="craftProg" style="margin-top:14px"></div>`;
 }
 for (const id of Object.keys(WORKSHOPS)) { PANELS[id] = () => workshopPanel(id); WIRE[id] = (m) => { m.querySelectorAll('[data-recipe]').forEach(b => b.onclick = () => G.actions.startCraft(id, WORKSHOPS[id].recipes[+b.dataset.recipe])); }; }
+
+// ── FURNACE (no NPC — opens on click): cooks meat ──
+const FURNACE_RECIPE = { output: 'cookedmeat', cost: { meat: 10 }, ms: 10000 };
+PANELS.furnace = () => `${close()}<h2>🔥 Furnace</h2>
+  <p class="muted">Cook raw meat over the fire — one piece at a time.</p>
+  <div class="unit"><img class="av" src="${itemIcon('cookedmeat')}" style="background:#10162b;padding:6px">
+    <div class="meta"><b>1 Cooked Meat</b><p>Cost: 10 meat<br>Production: 10s · double-click it in your inventory to restore 60 HP</p></div>
+    <button class="cta sky" id="cookBtn">Cook</button></div>
+  <div id="craftProg" style="margin-top:14px"></div>`;
+WIRE.furnace = (m) => { m.querySelector('#cookBtn').onclick = () => G.actions.startCraft('furnace', FURNACE_RECIPE); };
 function craftProgHTML() {
   const c = G.craft;
   if (!c) return `<p class="muted">Idle.${G.craftQ?.length ? ' Queued: ' + G.craftQ.length : ''}</p>`;
@@ -107,6 +117,7 @@ const ITEM_ICON = {
   gold: c => { c.fillStyle = '#5b6270'; c.beginPath(); c.roundRect(4, 6, 14, 11, 2); c.fill(); c.fillStyle = '#ffd34d'; c.fillRect(7, 9, 3, 2); c.fillRect(12, 12, 2, 2); c.fillStyle = '#fff3b0'; c.fillRect(7, 9, 2, 1); },
   goldingot: c => { c.fillStyle = '#e0b542'; c.beginPath(); c.moveTo(5, 16); c.lineTo(20, 16); c.lineTo(17, 9); c.lineTo(8, 9); c.closePath(); c.fill(); c.fillStyle = '#fff3b0'; c.fillRect(9, 10, 7, 2); },
   goldsword: c => { c.strokeStyle = '#ffd34d'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(6, 18); c.lineTo(18, 5); c.stroke(); c.strokeStyle = '#7a5a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(4, 20); c.lineTo(9, 15); c.stroke(); c.fillStyle = '#fff3b0'; c.beginPath(); c.arc(4, 20, 1.6, 0, 7); c.fill(); },
+  cookedmeat: c => { c.fillStyle = '#9a5a32'; c.beginPath(); c.ellipse(11, 11, 7, 5.5, 0, 0, 7); c.fill(); c.fillStyle = '#7a3f22'; c.beginPath(); c.ellipse(11, 12.5, 6, 3.5, 0, 0, 7); c.fill(); c.strokeStyle = '#f0e6d0'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(15, 13); c.lineTo(20, 16); c.stroke(); c.fillStyle = '#ffcaa0'; c.fillRect(6, 8, 3, 2); },
 };
 function itemIcon(kind) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 22; const c = cv.getContext('2d');
@@ -136,19 +147,24 @@ function eqSlotHTML([key, label]) {
   const v = G.equip?.[key];
   const title = (v && typeof v === 'object') ? `${gearName(v)} (${gearStat(v)})` : label;
   const inner = v ? `<img src="${slotIconURL(v)}" style="width:24px;height:24px;image-rendering:auto">` : '<span class="eqx">+</span>';
-  return `<div class="slot eqslot${v ? ' filled' : ''}" data-eslot="${key}" title="${title}"><span class="eqlab">${label}</span>${inner}</div>`;
+  return `<div class="slot eqslot${v ? ' filled' : ''}" data-eslot="${key}"${v ? ' draggable="true"' : ''} title="${title}"><span class="eqlab">${label}</span>${inner}</div>`;
 }
 PANELS.inventory = () => {
-  const resAll = [['iron', G.inv.iron], ['meat', G.inv.meat], ['wood', G.inv.wood], ['plank', G.inv.plank], ['ingot', G.inv.ingot], ['gold', G.inv.gold], ['goldingot', G.inv.goldingot], ['sword', G.inv.sword], ['goldsword', G.inv.goldsword]];
+  const resAll = [['iron', G.inv.iron], ['meat', G.inv.meat], ['wood', G.inv.wood], ['plank', G.inv.plank], ['ingot', G.inv.ingot], ['gold', G.inv.gold], ['goldingot', G.inv.goldingot], ['cookedmeat', G.inv.cookedmeat], ['sword', G.inv.sword], ['goldsword', G.inv.goldsword]];
   const res = resAll.filter(([k, v]) => (v || 0) >= 1);                 // only owned resources
   const used = G.actions.invCount();
   const slots = res.map(([k, v]) => {
-    const eq = EQUIP_OF[k];
-    return `<div class="slot${eq ? ' equippable' : ''}" data-item="${k}"${eq ? ' draggable="true"' : ''}><img src="${itemIcon(k)}" style="width:22px;height:22px;image-rendering:auto"><span style="font-size:6px">${k}</span><b>${v}</b></div>`;
+    const eq = EQUIP_OF[k], consume = k === 'cookedmeat', label = k === 'cookedmeat' ? 'cooked' : k;
+    return `<div class="slot${eq ? ' equippable' : ''}${consume ? ' consumable' : ''}" data-item="${k}"${eq ? ' draggable="true"' : ''}${consume ? ` data-consume="${k}"` : ''}><img src="${itemIcon(k)}" style="width:22px;height:22px;image-rendering:auto"><span style="font-size:6px">${label}</span><b>${v}</b></div>`;
   }).join('');
-  const gear = (G.inv.gear || []).map(it => `<div class="slot gearitem" data-gear="${it.id}" draggable="true" title="${gearName(it)} (${gearStat(it)})"><img src="${gearIconURL(it)}" style="width:20px;height:20px;image-rendering:auto"><span style="font-size:5.5px;text-align:center;line-height:1.05">${gearName(it)}<br><span style="color:var(--gold)">${gearStat(it)}</span></span></div>`).join('');
-  const count = res.length + (G.inv.gear?.length || 0);
-  const pad = Array.from({ length: Math.max(0, 12 - count) }, () => '<div class="slot"></div>').join('');
+  // stack identical gear (same creature + slot) into one cell with a count
+  const groups = {};
+  for (const it of (G.inv.gear || [])) { const key = it.slot + '|' + it.src + '|' + it.bonus; (groups[key] ||= []).push(it); }
+  const gear = Object.values(groups).map(arr => { const it = arr[0], n = arr.length;
+    return `<div class="slot gearitem" data-gear="${it.id}" draggable="true" title="${gearName(it)} (${gearStat(it)})"><img src="${gearIconURL(it)}" style="width:20px;height:20px;image-rendering:auto"><span style="font-size:5.5px;text-align:center;line-height:1.05">${gearName(it)}<br><span style="color:var(--gold)">${gearStat(it)}</span></span>${n > 1 ? `<b>${n}</b>` : ''}</div>`;
+  }).join('');
+  const count = res.length + Object.keys(groups).length;
+  const pad = Array.from({ length: Math.max(0, 24 - count) }, () => '<div class="slot"></div>').join('');
   return `${close()}<h2>🎒 Inventory <span style="font-size:8px;color:var(--dim)">${used} / ${G.invMax}</span></h2>
     <div class="row" style="align-items:flex-start;gap:16px">
       <div style="text-align:center">
@@ -157,7 +173,7 @@ PANELS.inventory = () => {
       </div>
       <div style="flex:1">
         <div class="inv">${slots}${gear}${pad}</div>
-        <p class="muted">Double-click or drag an item onto a slot to equip it. Double-click a slot to unequip. Swords go in Weapon; creature gear (Top/Bottom/Shoes/Shield) boosts your stats.</p>
+        <p class="muted">Double-click or drag an item onto a slot to equip it. To unequip, double-click the slot or drag it back here. Double-click Cooked Meat to restore 60 HP.</p>
         <div class="stats">
           <div class="statshead">Stat points to spend: <b style="color:var(--gold)">${G.statPoints || 0}</b></div>
           ${[['health', 'Health'], ['strength', 'Strength'], ['agility', 'Agility'], ['resistance', 'Resistance']].map(([k, l]) =>
@@ -191,6 +207,7 @@ WIRE.inventory = (m) => {
   m.querySelectorAll('[data-eslot]').forEach(el => {
     const slot = el.dataset.eslot;
     el.ondblclick = () => unequip(slot);
+    el.ondragstart = e => { if (G.equip[slot]) e.dataTransfer.setData('text/uneq', slot); };
     el.ondragover = e => e.preventDefault();
     el.ondrop = e => {
       e.preventDefault();
@@ -199,6 +216,17 @@ WIRE.inventory = (m) => {
       else if (gid) { const g = (G.inv.gear || []).find(x => x.id === gid); if (g && g.slot === slot) equipGear(gid); else env.toast("That item doesn't go in this slot."); }
       else env.toast("That item doesn't go in this slot.");
     };
+  });
+  // drop an equipped slot back onto the inventory grid to unequip it
+  const invEl = m.querySelector('.inv');
+  if (invEl) {
+    invEl.ondragover = e => { if ([...e.dataTransfer.types].includes('text/uneq')) e.preventDefault(); };
+    invEl.ondrop = e => { const slot = e.dataTransfer.getData('text/uneq'); if (slot) { e.preventDefault(); unequip(slot); } };
+  }
+  // consume cooked meat → restore 60 HP
+  m.querySelectorAll('[data-consume]').forEach(el => el.ondblclick = () => {
+    const k = el.dataset.consume; if ((G.inv[k] || 0) <= 0) return;
+    G.inv[k]--; G.actions.heal?.(60); env.toast('+60 HP'); G.actions.syncProfile?.(); openPanel('inventory');
   });
   m.querySelectorAll('.statplus').forEach(b => b.onclick = () => { G.actions.addStatPoint?.(b.dataset.stat); openPanel('inventory'); });
 };

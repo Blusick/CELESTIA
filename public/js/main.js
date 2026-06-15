@@ -321,7 +321,13 @@ function moveStep(dx, dy) {
   G.me.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
 }
 
-function buildNpcs() { G.npcs = []; for (const isl of G.world.islands) for (const f of (isl.features || [])) if (f.t === 'npc') G.npcs.push({ name: f.name, role: f.role, x: (isl.x + f.tx + 0.5) * TILE, y: (isl.y + f.ty + 0.6) * TILE }); }
+function buildNpcs() {
+  G.npcs = []; G.furnaces = [];
+  for (const isl of G.world.islands) for (const f of (isl.features || [])) {
+    if (f.t === 'npc') G.npcs.push({ name: f.name, role: f.role, x: (isl.x + f.tx + 0.5) * TILE, y: (isl.y + f.ty + 0.6) * TILE });
+    else if (f.t === 'furnace') G.furnaces.push({ x: (isl.x + f.tx + 0.5) * TILE, y: (isl.y + f.ty + 0.6) * TILE });
+  }
+}
 
 // ── click-to-command: move, attack, or farm ─────────────────
 function clickToCommand() {
@@ -332,6 +338,13 @@ function clickToCommand() {
   if (npc) {
     if (Math.hypot(npc.x - G.me.x, npc.y - G.me.y) < TILE * 3) openPanel(npc.role);
     else { setMoveTo(npc.x, npc.y); markers.push({ x: npc.x, y: npc.y, life: 1 }); toast('Walk closer to talk to ' + npc.name); }
+    return;
+  }
+  // furnace under cursor → open it (no NPC) if close, else walk over
+  const fur = (G.furnaces || []).find(f => Math.abs(f.x - mouse.wx) < 30 && mouse.wy < f.y + 14 && mouse.wy > f.y - 70);
+  if (fur) {
+    if (Math.hypot(fur.x - G.me.x, fur.y - G.me.y) < TILE * 3) openPanel('furnace');
+    else { setMoveTo(fur.x, fur.y); markers.push({ x: fur.x, y: fur.y, life: 1 }); toast('Walk closer to the Furnace.'); }
     return;
   }
   // Arena PvP: during a battle, clicking another fighter attacks them
@@ -372,7 +385,7 @@ function harvest(n) {
   if (n.hp <= 0) { n.dead = true; n.respawn = performance.now() + 20000; addXP(4); farmTarget = null; }
   refreshHUD(); refreshActivePanel();
 }
-function invCount() { const i = G.inv; return i.iron + i.meat + i.wood + i.plank + i.ingot + i.sword + (i.gold || 0) + (i.goldingot || 0) + (i.goldsword || 0) + (i.gear || []).length + (i.items || []).reduce((a, b) => a + (b.qty || 0), 0); }
+function invCount() { const i = G.inv; return i.iron + i.meat + i.wood + i.plank + i.ingot + i.sword + (i.gold || 0) + (i.goldingot || 0) + (i.goldsword || 0) + (i.cookedmeat || 0) + (i.gear || []).length + (i.items || []).reduce((a, b) => a + (b.qty || 0), 0); }
 // creature equipment drops
 const SLOT_NAMES = { top: 'Top', bottom: 'Bottom', shoes: 'Boots', shield: 'Shield' };   // equipment drops are rolled server-side
 let gearSeq = 1;

@@ -144,6 +144,7 @@ input[type=text],input[type=number],select{font-family:inherit;font-size:9px;pad
 .slot b{position:absolute;bottom:3px;right:4px;font-size:7px;color:#fff;}
 
 .slot.equippable{cursor:grab;border-color:#caa84a;}
+.slot.consumable{cursor:pointer;border-color:#c47a4a;}
 .slot.equippable:hover{border-color:var(--gold);}
 
 /* equipment slots (paper-doll) */
@@ -180,7 +181,7 @@ th{color:var(--gold);}
 .ptile .sw{width:20px;height:20px;border:2px solid #0006;}
 
 /* toast */
-.toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:var(--panel);
+.toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:var(--panel);pointer-events:none;
   border:3px solid var(--edge);padding:12px 16px;border-radius:5px;font-size:9px;z-index:60;box-shadow:0 5px 0 #0a0f1f;max-width:80vw;text-align:center;}
 
 /* army cards */

@@ -315,6 +315,7 @@ const BUILDINGS = {
   crane: (c, x, y, f, t) => drawCrane(c, x, y, t),
   workshop: (c, x, y, f, t) => drawWorkshop(c, x, y, f.kind || 'lumberjack', t),
   shopbuilding: (c, x, y, f, t) => drawShopBuilding(c, x, y, f.kind || 'bank', t),
+  furnace: (c, x, y, f, t) => drawFurnace(c, x, y, t),
   spire: (c, x, y, f, t) => drawSpire(c, x, y, t, f.dark),
   obelisk: (c, x, y, f, t) => drawObelisk(c, x, y, t),
   ruin: (c, x, y, f, t) => drawRuin(c, x, y),
@@ -387,6 +388,25 @@ function drawColonyDome(ctx, x, y, t) {
   ell(ctx, x - W / 2 + 7, gy - 10, 1.8, 1.8, (t * 2 | 0) % 2 ? '#ff6a5a' : '#a83a30');
   ctx.restore();
 }
+// ── Furnace / brick oven (cooks meat — no NPC) ──
+function drawFurnace(ctx, x, y, t) {
+  const W = 30, H = 24, gy = y + 7, fl = 0.6 + 0.4 * Math.sin(t * 6);
+  ctx.save(); ctx.lineJoin = 'round';
+  ell(ctx, x, gy + 3, W * 0.55, 5, 'rgba(0,0,0,.28)');
+  r(ctx, x - W / 2, gy - H, W, H, '#6b6f78');                                        // stone body
+  r(ctx, x - W / 2, gy - H, 4, H, '#7c818b'); r(ctx, x + W / 2 - 4, gy - H, 4, H, 'rgba(0,0,0,.16)');
+  ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 1;                            // brick courses
+  for (let yy = gy - H + 5, row = 0; yy < gy; yy += 5, row++) { ctx.beginPath(); ctx.moveTo(x - W / 2, yy); ctx.lineTo(x + W / 2, yy); ctx.stroke(); for (let xx = x - W / 2 + (row % 2 ? 5 : 0); xx < x + W / 2; xx += 10) { ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx, yy + 5); ctx.stroke(); } }
+  r(ctx, x - W / 2 - 2, gy - H - 3, W + 4, 4, '#8a8f99');                            // top slab
+  r(ctx, x + 5, gy - H - 12, 7, 10, '#5a5e66'); r(ctx, x + 5, gy - H - 12, 7, 2, '#7c818b'); // chimney
+  ctx.fillStyle = '#2a1a12'; ctx.beginPath(); ctx.moveTo(x - 8, gy - 2); ctx.lineTo(x - 8, gy - 12); ctx.arc(x, gy - 12, 8, Math.PI, 0); ctx.lineTo(x + 8, gy - 2); ctx.closePath(); ctx.fill();   // mouth
+  ctx.fillStyle = `rgba(255,140,40,${0.7 * fl + 0.3})`; ctx.beginPath(); ctx.moveTo(x - 6, gy - 2); ctx.lineTo(x - 6, gy - 9); ctx.arc(x, gy - 9, 6, Math.PI, 0); ctx.lineTo(x + 6, gy - 2); ctx.closePath(); ctx.fill();   // glow
+  ctx.fillStyle = '#ffd34d'; for (const dx of [-3, 0, 3]) { ctx.beginPath(); ctx.moveTo(x + dx - 2, gy - 3); ctx.quadraticCurveTo(x + dx, gy - 9 - fl * 3, x + dx + 2, gy - 3); ctx.fill(); }   // flames
+  ctx.strokeStyle = '#1a1410'; ctx.lineWidth = 1; for (const dx of [-4, 0, 4]) { ctx.beginPath(); ctx.moveTo(x + dx, gy - 2); ctx.lineTo(x + dx, gy - 7); ctx.stroke(); }   // grate
+  for (let i = 0; i < 3; i++) ell(ctx, x + 8.5 + Math.sin(t + i) * 3, gy - H - 18 - i * 7 + Math.sin(t * 2 + i) * 2, 2.5 + i, 2 + i, `rgba(200,205,215,${0.4 - i * 0.1})`);   // smoke
+  ctx.restore();
+}
+
 // ── Trade workshop building (stands behind its NPC) ──
 const WS_ICON = { lumberjack: '🪓', miner: '⛏️', builder: '🔨' };
 function drawWorkshop(ctx, x, y, kind, t) {

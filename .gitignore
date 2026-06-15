@@ -3,3 +3,5 @@ node_modules/
 data/world.json
 *.log
 .DS_Store
+_preview/
+_*.mjs
