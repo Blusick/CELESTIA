@@ -794,37 +794,73 @@ export function drawPlayer(ctx, x, y, app, dir, frame, inAir, ship, gear) {
 
 // ── Spaceship — sleek grey fighter (pink cockpit, blue engines) ──
 const SHIP_SCALE = { scout: 0.92, cruiser: 1.12, frigate: 1.32, dread: 1.55 };
+function sFill(ctx, col, pts, close = true) { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); if (close) ctx.closePath(); ctx.fill(); }
+function sOut(ctx, pts, col = '#191b22', w = 1.6) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); ctx.stroke(); }
+function sFlame(ctx, ex, ey, f) { ctx.fillStyle = '#ffb15e'; ctx.beginPath(); ctx.ellipse(ex, ey + f * 0.4, 2.4, f, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#ffe49a'; ctx.beginPath(); ctx.ellipse(ex, ey - 1 + f * 0.3, 1.2, f * 0.6, 0, 0, 7); ctx.fill(); }
 export function drawShip(ctx, x, y, kind, dir, frame) {
   const sc = SHIP_SCALE[kind] || 0.92;
   const ang = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 }[dir];
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang == null ? Math.PI / 2 : ang); ctx.scale(sc, sc);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  const OL = '#191b22', hull = '#5b6068', hullHi = '#878d97', hullDk = '#3a3d44', pink = '#df6c95', pinkHi = '#f6a7c4', blue = '#46c8ff';
-  const fill = (col, pts, close = true) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); if (close) ctx.closePath(); ctx.fill(); };
-  const outline = (pts) => { ctx.strokeStyle = OL; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); ctx.stroke(); };
-  // engine flames + smoke at the tail (+y)
   const f = 5 + (frame % 2 ? 4 : 0);
-  for (const ex of [-5, 5]) { ctx.fillStyle = '#ffb15e'; ctx.beginPath(); ctx.ellipse(ex, 17 + f * 0.4, 2.4, f, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#ffe49a'; ctx.beginPath(); ctx.ellipse(ex, 16 + f * 0.3, 1.2, f * 0.6, 0, 0, 7); ctx.fill(); }
-  // rear wing pods
-  for (const s of [-1, 1]) { const pod = [[s * 7, 4], [s * 13, 7], [s * 13, 16], [s * 7, 15]]; fill(hullDk, pod); outline(pod); ctx.fillStyle = blue; for (let i = 0; i < 3; i++) ctx.fillRect(s * 9 - 1, 9 + i * 2.2, 2, 1.4); }
-  // swept wings with pink leading edge
-  for (const s of [-1, 1]) {
-    const wing = [[s * 4, -2], [s * 20, 9], [s * 16, 13], [s * 4, 8]]; fill(hull, wing); outline(wing);
-    fill(pink, [[s * 4, -2], [s * 20, 9], [s * 17, 10], [s * 4, 1]]);
-    fill(pinkHi, [[s * 5, -1], [s * 13, 4], [s * 12, 5.5], [s * 5, 1]]);
-  }
-  // fuselage (pointed nose up)
-  const body = [[0, -18], [5, -6], [6, 10], [3, 18], [-3, 18], [-6, 10], [-5, -6]];
-  fill(hull, body); fill(hullHi, [[0, -18], [3, -6], [2, 14], [-2, 14], [-3, -6]]); outline(body);
-  ctx.fillStyle = hullDk; ctx.fillRect(-1.4, -4, 2.8, 20);
-  // cockpit canopy (pink, glowing)
-  fill(pink, [[0, -15], [4, -7], [3, 4], [-3, 4], [-4, -7]]);
-  fill(pinkHi, [[0, -13], [2.4, -7], [1.6, -1], [-1.6, -1], [-2.4, -7]]);
-  ctx.fillStyle = '#ffd9e8'; ctx.beginPath(); ctx.ellipse(-0.6, -9, 1, 2.4, 0, 0, 7); ctx.fill();
-  // nose tip + chin
-  ctx.strokeStyle = OL; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(0, -15); ctx.stroke();
-  fill(hullDk, [[-3, 17], [3, 17], [2, 21], [-2, 21]]);
+  if (kind === 'cruiser') drawCruiserShip(ctx, f);
+  else if (kind === 'frigate') drawFrigateShip(ctx, f);
+  else if (kind === 'dread') drawDreadShip(ctx, f);
+  else drawScoutShip(ctx, f);
   ctx.restore();
+}
+// scout — grey fighter, pink cockpit (starter)
+function drawScoutShip(ctx, f) {
+  const OL = '#191b22', hull = '#5b6068', hullHi = '#878d97', hullDk = '#3a3d44', pink = '#df6c95', pinkHi = '#f6a7c4', blue = '#46c8ff';
+  for (const ex of [-5, 5]) sFlame(ctx, ex, 17, f);
+  for (const s of [-1, 1]) { const pod = [[s * 7, 4], [s * 13, 7], [s * 13, 16], [s * 7, 15]]; sFill(ctx, hullDk, pod); sOut(ctx, pod, OL); ctx.fillStyle = blue; for (let i = 0; i < 3; i++) ctx.fillRect(s * 9 - 1, 9 + i * 2.2, 2, 1.4); }
+  for (const s of [-1, 1]) { const wing = [[s * 4, -2], [s * 20, 9], [s * 16, 13], [s * 4, 8]]; sFill(ctx, hull, wing); sOut(ctx, wing, OL); sFill(ctx, pink, [[s * 4, -2], [s * 20, 9], [s * 17, 10], [s * 4, 1]]); sFill(ctx, pinkHi, [[s * 5, -1], [s * 13, 4], [s * 12, 5.5], [s * 5, 1]]); }
+  const body = [[0, -18], [5, -6], [6, 10], [3, 18], [-3, 18], [-6, 10], [-5, -6]];
+  sFill(ctx, hull, body); sFill(ctx, hullHi, [[0, -18], [3, -6], [2, 14], [-2, 14], [-3, -6]]); sOut(ctx, body, OL);
+  ctx.fillStyle = hullDk; ctx.fillRect(-1.4, -4, 2.8, 20);
+  sFill(ctx, pink, [[0, -15], [4, -7], [3, 4], [-3, 4], [-4, -7]]); sFill(ctx, pinkHi, [[0, -13], [2.4, -7], [1.6, -1], [-1.6, -1], [-2.4, -7]]);
+  sFill(ctx, hullDk, [[-3, 17], [3, 17], [2, 21], [-2, 21]]);
+}
+// cruiser — sleek silver interceptor, teal canopy, single engine
+function drawCruiserShip(ctx, f) {
+  const hull = '#aeb4be', hi = '#dfe3e9', dk = '#7c828c', OL = '#23262c', teal = '#62cfcf', tealHi = '#bff0ef';
+  sFlame(ctx, 0, 18, f);
+  sFill(ctx, dk, [[-3, 12], [3, 12], [2.4, 18], [-2.4, 18]]); sOut(ctx, [[-3, 12], [3, 12], [2.4, 18], [-2.4, 18]], OL);
+  for (const s of [-1, 1]) { const w = [[s * 3, 0], [s * 22, 8], [s * 18, 11], [s * 3, 6]]; sFill(ctx, hull, w); sOut(ctx, w, OL); sFill(ctx, dk, [[s * 3, 4], [s * 18, 9.5], [s * 18, 11], [s * 3, 6]]); }
+  const body = [[0, -20], [3.5, -8], [4.5, 10], [2.5, 16], [-2.5, 16], [-4.5, 10], [-3.5, -8]];
+  sFill(ctx, hull, body); sFill(ctx, hi, [[0, -20], [2, -8], [1.6, 12], [-1.6, 12], [-2, -8]]); sOut(ctx, body, OL);
+  ctx.strokeStyle = 'rgba(40,44,52,.5)'; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(-3, 2); ctx.lineTo(3, 2); ctx.moveTo(-3.5, 8); ctx.lineTo(3.5, 8); ctx.stroke();
+  sFill(ctx, teal, [[0, -15], [3, -8], [2.2, -1], [-2.2, -1], [-3, -8]]); sFill(ctx, tealHi, [[0, -13], [1.6, -8], [1, -3], [-1, -3], [-1.6, -8]]);
+}
+// frigate — navy aggressive fighter, forward-swept wings, twin engines
+function drawFrigateShip(ctx, f) {
+  const hull = '#2e3c5a', hi = '#46587e', dk = '#1c2638', OL = '#10141f', glow = '#7fd0ff', edge = '#6b7fb0';
+  for (const ex of [-5, 5]) sFlame(ctx, ex, 16, f * 0.85);
+  for (const s of [-1, 1]) { const p = [[s * 3, 6], [s * 8, 8], [s * 8, 17], [s * 3, 16]]; sFill(ctx, dk, p); sOut(ctx, p, OL); ctx.fillStyle = glow; ctx.fillRect(s * 5 - 1, 16.5, 3, 1.4); }
+  for (const s of [-1, 1]) { const w = [[s * 4, 2], [s * 20, -6], [s * 18, -2], [s * 5, 7]]; sFill(ctx, hull, w); sOut(ctx, w, OL); sFill(ctx, edge, [[s * 4, 2], [s * 20, -6], [s * 19, -4], [s * 5, 4]]); }
+  for (const s of [-1, 1]) { const t = [[s * 3, 8], [s * 7, 12], [s * 6, 17], [s * 3, 15]]; sFill(ctx, hi, t); sOut(ctx, t, OL); }
+  const body = [[0, -19], [4, -9], [5, 8], [2.5, 17], [-2.5, 17], [-5, 8], [-4, -9]];
+  sFill(ctx, hull, body); sFill(ctx, hi, [[0, -19], [2.2, -9], [1.8, 10], [-1.8, 10], [-2.2, -9]]); sOut(ctx, body, OL);
+  ctx.fillStyle = dk; ctx.fillRect(-1.2, -8, 2.4, 22);
+  sFill(ctx, '#1a2740', [[0, -14], [2.6, -8], [2, -1], [-2, -1], [-2.6, -8]]); ctx.fillStyle = glow; ctx.globalAlpha = 0.5; ctx.fillRect(-1.2, -10, 2.4, 7); ctx.globalAlpha = 1;
+}
+// dread — white/orange triple-engine fortress
+function drawDreadShip(ctx, f) {
+  const hull = '#e7eaee', hi = '#ffffff', dk = '#aeb3bb', orange = '#ff9a3c', OL = '#3a3d44', blue = '#46c8ff';
+  for (const ex of [-12, 12]) sFlame(ctx, ex, 12, f);
+  sFlame(ctx, 0, 18, f * 0.8);
+  for (const s of [-1, 1]) {
+    const arm = [[s * 4, -2], [s * 12, -4], [s * 13, 2], [s * 5, 3]]; sFill(ctx, hull, arm); sOut(ctx, arm, OL);
+    const pod = [[s * 9, -8], [s * 15, -6], [s * 15, 10], [s * 9, 11]]; sFill(ctx, dk, pod); sOut(ctx, pod, OL);
+    ctx.fillStyle = orange; ctx.fillRect(s * 11 - 1, -4, 2, 12);
+    ctx.fillStyle = blue; ctx.beginPath(); ctx.arc(s * 12, 10, 2.2, 0, 7); ctx.fill();
+  }
+  const body = [[0, -20], [5, -8], [6, 8], [3, 18], [-3, 18], [-6, 8], [-5, -8]];
+  sFill(ctx, hull, body); sFill(ctx, hi, [[0, -20], [2.5, -8], [2, 12], [-2, 12], [-2.5, -8]]); sOut(ctx, body, OL);
+  ctx.fillStyle = orange; ctx.fillRect(-4, 6, 8, 1.4); ctx.fillRect(-3.5, -3, 7, 1.2);
+  sFill(ctx, dk, [[-3, 2], [3, 2], [2.4, 12], [-2.4, 12]]); sOut(ctx, [[-3, 2], [3, 2], [2.4, 12], [-2.4, 12]], OL);
+  sFill(ctx, '#2a2f3a', [[0, -16], [3.5, -9], [3, 1], [-3, 1], [-3.5, -9]]);
+  ctx.fillStyle = '#bfe6ff'; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.ellipse(-0.8, -8, 1.2, 3, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
 }
 
 // ── Sword (red/silver) for the swing animation ──────────────

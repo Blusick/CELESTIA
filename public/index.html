@@ -29,7 +29,6 @@
   <div style="display:flex;gap:8px;">
     <button id="btnBuyTerritory" class="pill pill-gold locked" title="Locked for now"><img class="bicon" data-ic="coin"> Buy Territory 🔒</button>
     <button id="btnHome" class="pill pill-home"><img class="bicon" data-ic="home"> HOME</button>
-    <button id="btnChat" class="pill" title="Toggle chat">💬 CHAT</button>
   </div>
   <div id="onlineChip" class="wallet-chip" style="margin-top:8px;color:var(--grn);display:inline-block;">🟢 1 online</div>
 </div>
@@ -64,6 +63,7 @@
 </div>
 
 <!-- ── CHAT ────────────────────────────────────────────── -->
+<button id="btnChat" class="pill hud hidden" title="Toggle chat" style="position:fixed;left:14px;bottom:14px;z-index:30">💬 CHAT</button>
 <div id="chat" class="hud hidden">
   <div id="chatTabs" class="chat-tabs">
     <button data-ch="general" class="active">GENERAL</button>

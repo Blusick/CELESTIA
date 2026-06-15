@@ -27,6 +27,7 @@ addEventListener('resize', resize); resize();
 
 // floor on how far you can zoom out (≈5× less than fitting the whole map).
 const ZOOM_FLOOR = 0.75;   // max dezoom reduced (÷3)
+G.SHIP_COST = { cruiser: { plank: 10, ingot: 10 }, frigate: { plank: 20, ingot: 20 }, dread: { plank: 50, ingot: 50, goldingot: 10 } };
 function minZoom() { return ZOOM_FLOOR; }
 
 // ── input ───────────────────────────────────────────────────
@@ -1247,6 +1248,7 @@ function wireNet() {
     if (sv.equip) G.equip = { ...G.equip, ...sv.equip };
     if (sv.appearance) G.appearance = { ...G.appearance, ...sv.appearance };
     if (sv.ship) G.ship = sv.ship;
+    if (Array.isArray(sv.ownedShips)) G.ownedShips = sv.ownedShips.includes('scout') ? sv.ownedShips : ['scout', ...sv.ownedShips];
     if (sv.name && G.me) G.me.name = sv.name;
     if (typeof m.level === 'number') G.level = m.level;
     if (typeof m.xp === 'number') G.xp = m.xp;
@@ -1326,12 +1328,12 @@ async function refreshBalance() {
   document.getElementById('balance').textContent = Math.floor(b).toLocaleString() + ' $CELESTIA';
 }
 
-function syncProfile() { if (wallet.pubkey) send({ type: 'sync', inv: G.inv, bank: G.bank, equip: G.equip, level: G.level, xp: G.xp, xpNeed: G.xpNeed, maxHp: G.maxHp, stats: G.stats, statPoints: G.statPoints, res: effStat('resistance') }); }
+function syncProfile() { if (wallet.pubkey) send({ type: 'sync', inv: G.inv, bank: G.bank, equip: G.equip, level: G.level, xp: G.xp, xpNeed: G.xpNeed, maxHp: G.maxHp, stats: G.stats, statPoints: G.statPoints, res: effStat('resistance'), ownedShips: G.ownedShips, ship: G.ship }); }
 
 // ── boot ────────────────────────────────────────────────────
 async function startGame(asGuest) {
   document.getElementById('login').classList.add('hidden');
-  for (const id of ['topLeft', 'topRight', 'status', 'toolbar', 'chat', 'resTray']) document.getElementById(id).classList.remove('hidden');
+  for (const id of ['topLeft', 'topRight', 'status', 'toolbar', 'chat', 'resTray', 'btnChat']) document.getElementById(id).classList.remove('hidden');
   setTrayIcons(); setButtonIcons();
   audio();
   await loadConfig();
@@ -1357,6 +1359,15 @@ G.actions = {
   applyStats,
   locateNpc: (role) => { const n = (G.npcs || []).find(x => x.role === role); if (n) { G.locate = { x: n.x, y: n.y, name: n.name }; toast('Follow the beacon to ' + n.name + '.'); } else toast('Cannot find that NPC.'); },
   nearNpc: (role) => { const n = (G.npcs || []).find(x => x.role === role); return !!(n && G.me && Math.hypot(n.x - G.me.x, n.y - G.me.y) < TILE * 3.2); },
+  buyShip: (kind) => {
+    const cost = G.SHIP_COST[kind]; if (!cost) return;
+    if ((G.ownedShips ||= ['scout']).includes(kind)) return;
+    for (const [r, n] of Object.entries(cost)) if ((G.inv[r] || 0) < n) return toast(`Need ${n} ${r === 'goldingot' ? 'gold ingot' : r === 'ingot' ? 'iron ingot' : r}.`);
+    for (const [r, n] of Object.entries(cost)) G.inv[r] -= n;
+    G.ownedShips.push(kind); G.ship = kind;
+    refreshHUD(); syncProfile(); sendProfile(); toast('🛸 ' + kind + ' acquired & active!'); refreshActivePanel();
+  },
+  useShip: (kind) => { if ((G.ownedShips || ['scout']).includes(kind)) { G.ship = kind; syncProfile(); sendProfile(); refreshActivePanel(); toast('Now flying the ' + kind + '.'); } },
   placeShip: (kind) => { if (!G.me) return; G.builtShips.push({ kind, x: G.me.x + 40, y: G.me.y }); toast(kind + ' parked on your island.'); },
   setBuildBrush: (b) => { G.buildBrush = b; },
   chat: (text) => {
@@ -1368,10 +1379,10 @@ G.actions = {
   enterArena: () => {
     if (G.me.inArena) return toast('You are already in the Arena.');
     if (G.arena?.phase === 'battle') return toast('A battle is already underway — wait for the next round.');
-    const cost = { meat: 1 };
-    for (const [k, n] of Object.entries(cost)) if ((G.inv[k] || 0) < n) return toast(`The Guardian needs ${n} ${k}.`);
+    const cost = { cookedmeat: 1, plank: 3, ingot: 3 };
+    for (const [k, n] of Object.entries(cost)) if ((G.inv[k] || 0) < n) return toast(`The Guardian needs ${n} ${k === 'cookedmeat' ? 'cooked steak' : k === 'ingot' ? 'iron ingot' : k}.`);
     for (const [k, n] of Object.entries(cost)) G.inv[k] -= n;
-    refreshHUD(); send({ type: 'enterArena' }); openPanel(null);
+    refreshHUD(); syncProfile(); send({ type: 'enterArena' }); openPanel(null);
     toast('🛡️ The Guardian lets you through…');
   },
   startCraft: (id, w) => {

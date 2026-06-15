@@ -188,7 +188,7 @@ function rollDrops(kind) {
 }
 function saveProfile(p) {                                            // persist a wallet's progress to disk
   if (!p.wallet) return;
-  W.state.profiles[p.wallet] = { name: p.name, appearance: p.appearance, ship: p.ship,
+  W.state.profiles[p.wallet] = { name: p.name, appearance: p.appearance, ship: p.ship, ownedShips: p.ownedShips || null,
     level: p.level, xp: p.xp, maxHp: p.maxHp, stats: p.stats || null, statPoints: p.statPoints || 0,
     inv: p.inv || null, bank: p.bank || null, equip: p.equip || null, ts: Date.now() };
   W.saveState();
@@ -221,6 +221,7 @@ function handle(ws, p, m) {
           if (sv.ship) p.ship = sv.ship;
           if (sv.name) p.name = sv.name;
           if (sv.inv) p.inv = sv.inv; if (sv.bank) p.bank = sv.bank; if (sv.equip) p.equip = sv.equip;
+          if (sv.ownedShips) p.ownedShips = sv.ownedShips;
           if (sv.stats) p.stats = sv.stats; if (typeof sv.statPoints === 'number') p.statPoints = sv.statPoints;
           send(ws, { type: 'profileLoad', profile: sv, level: p.level, xp: p.xp, xpNeed: xpForLevel(p.level), hp: p.hp, maxHp: p.maxHp });
         }
@@ -239,6 +240,8 @@ function handle(ws, p, m) {
       if (m.stats) p.stats = m.stats;
       if (typeof m.statPoints === 'number') p.statPoints = m.statPoints;
       if (typeof m.res === 'number') p.res = m.res;
+      if (Array.isArray(m.ownedShips)) p.ownedShips = m.ownedShips;
+      if (typeof m.ship === 'string') p.ship = m.ship;
       saveProfile(p);
       break;
     }
@@ -305,7 +308,7 @@ function handle(ws, p, m) {
 }
 
 // ── Arena: 30-minute Battle Royale cycle ─────────────────────
-const ARENA_PERIOD = 5 * 60 * 1000, BATTLE_MS = 90 * 1000;   // battle every 5 minutes
+const ARENA_PERIOD = 30 * 60 * 1000, BATTLE_MS = 3 * 60 * 1000;   // battle every 30 min, lasts 3 min
 const arena = { phase: 'waiting', nextAt: Date.now() + ARENA_PERIOD, endsAt: 0, winner: null, parts: new Set() };
 function arenaPub() { return { phase: arena.phase, remaining: Math.max(0, (arena.phase === 'battle' ? arena.endsAt : arena.nextAt) - Date.now()), winner: arena.winner, count: arena.parts.size }; }
 function broadcastArena() { broadcast({ type: 'arena', ...arenaPub() }); }

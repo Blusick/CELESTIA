@@ -19,6 +19,7 @@ export const G = {
 
   appearance: { skin: '#f0c080', shirt: '#7c8a4a', pants: '#2b3a63', shoes: '#5a3a22', hat: 'none', hatColor: '#ff5577', glasses: false },
   ship: 'scout',
+  ownedShips: ['scout'],     // ships the player has unlocked
   builtShips: [],            // ships placed on island {kind,x,y}
   army: { Pilot: 0, Fighter: 0, Healer: 0, Mage: 0 },
 

@@ -39,7 +39,7 @@ PANELS.guardian = () => {
     <div style="text-align:center;margin:10px 0;font-size:11px">${status}<br><span style="font-size:8px;color:var(--dim)">Fighters waiting: ${a.count || 0}</span></div>
     <div class="grid" style="border:2px solid var(--edge);border-radius:5px;padding:10px;margin-bottom:12px">
       <b style="font-size:9px;color:var(--gold)">Entry tribute</b>
-      <div class="row">${[['meat', 1]].map(([k, n]) => `<div class="slot" style="width:auto;padding:6px 10px"><img src="${itemIcon(k)}" style="width:20px;height:20px"> ${n} ${k}</div>`).join('')}</div>
+      <div class="row">${[['cookedmeat', 1, 'cooked steak'], ['plank', 3, 'planks'], ['ingot', 3, 'iron ingots']].map(([k, n, lbl]) => `<div class="slot" style="width:auto;padding:6px 10px"><img src="${itemIcon(k)}" style="width:20px;height:20px"> ${n} ${lbl}</div>`).join('')}</div>
     </div>
     <button class="cta sky" id="enterArenaBtn"${a.phase === 'battle' ? ' disabled' : ''}>${a.phase === 'battle' ? 'Battle underway…' : 'Enter the Arena'}</button>`;
 };
@@ -305,23 +305,35 @@ PANELS.army = () => `${close()}<h2>⚔️ Army <span style="font-size:8px;color:
   </div><p class="muted">Recruiting soldiers (Pilot · Fighter · Healer · Mage) is <b>coming soon</b>.</p>`;
 WIRE.army = () => {};
 
-// ── SHIPYARD ────────────────────────────────────────────────
+// ── SHIPYARD — buy bigger ships with crafted materials ──────
 const SHIPS = {
-  scout:   { price: '5,000 $CELESTIA',  desc: 'Light & nimble starter craft.' },
-  cruiser: { price: '20,000 $CELESTIA', desc: 'Balanced hull, faster flight.' },
-  frigate: { price: '60,000 $CELESTIA', desc: 'Heavy plating, strong thrust.' },
-  dread:   { price: '150,000 $CELESTIA',desc: 'A flying fortress. Maximum speed.' },
+  scout:   { name: 'Scout',       desc: 'Light & nimble starter craft.' },
+  cruiser: { name: 'Cruiser',     desc: 'Sleek silver interceptor — faster flight.' },
+  frigate: { name: 'Frigate',     desc: 'Navy heavy fighter — strong thrust.' },
+  dread:   { name: 'Dreadnought', desc: 'White triple-engine fortress — maximum speed.' },
 };
-PANELS.shipyard = () => `${close()}<h2>🛸 Shipyard</h2>
+const SHIP_RES = { plank: 'planks', ingot: 'iron ingots', goldingot: 'gold ingots' };
+PANELS.shipyard = () => {
+  const owned = G.ownedShips || ['scout'];
+  return `${close()}<h2>🛸 Shipyard</h2>
   <div class="grid">
-  ${Object.entries(SHIPS).map(([k, s], i) => `<div class="unit"${i ? ' style="opacity:.55;filter:grayscale(.7)"' : ''}>
-    <canvas class="av" width="60" height="40" data-ship="${k}" style="width:60px"></canvas>
-    <div class="meta"><b>${k.toUpperCase()} ${i === 0 ? '<span class="count">(free · active)</span>' : ''}</b><p>${s.desc}${i ? '<br><span style="color:var(--gold)">' + s.price + '</span>' : ''}</p></div>
-    <button class="cta${i ? '' : ' sky'}" ${i ? 'disabled' : 'data-build="scout"'} style="padding:8px 10px;font-size:7px${i ? ';background:#39456e;color:#9fb0d8;cursor:not-allowed' : ''}">${i ? '🔒 Locked' : 'Active'}</button>
-  </div>`).join('')}</div>
-  <p class="muted">Your <b>Scout is free</b> — you board it automatically when you leave an island. Stronger ships are coming soon.</p>`;
+  ${Object.entries(SHIPS).map(([k, s]) => {
+    const cost = G.SHIP_COST?.[k], have = owned.includes(k), active = G.ship === k;
+    const costStr = cost ? Object.entries(cost).map(([r, n]) => `${n} ${SHIP_RES[r] || r}`).join(' + ') : 'free';
+    const btn = active ? '<button class="cta" disabled style="padding:8px 10px;font-size:7px;background:#39456e;color:#9fb0d8;cursor:default">Active</button>'
+      : have ? `<button class="cta sky" data-use="${k}" style="padding:8px 10px;font-size:7px">Use</button>`
+      : `<button class="cta sky" data-buy="${k}" style="padding:8px 10px;font-size:7px">Buy</button>`;
+    return `<div class="unit">
+      <canvas class="av" width="66" height="46" data-ship="${k}" style="width:66px"></canvas>
+      <div class="meta"><b>${s.name.toUpperCase()} ${active ? '<span class="count">(active)</span>' : have ? '<span class="count">(owned)</span>' : ''}</b><p>${s.desc}${cost ? '<br><span style="color:var(--gold)">' + costStr + '</span>' : ''}</p></div>
+      ${btn}</div>`;
+  }).join('')}</div>
+  <p class="muted">Buy bigger ships with crafted materials, then <b>Use</b> to fly them. You board your active ship when you leave an island.</p>`;
+};
 WIRE.shipyard = (m) => {
-  m.querySelectorAll('[data-ship]').forEach(cv => { const c = cv.getContext('2d'); c.save(); c.translate(30, 22); S.drawShip(c, 0, 0, cv.dataset.ship, 'right', 0); c.restore(); });
+  m.querySelectorAll('[data-ship]').forEach(cv => { const c = cv.getContext('2d'); c.save(); c.translate(33, 25); S.drawShip(c, 0, 0, cv.dataset.ship, 'right', 0); c.restore(); });
+  m.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { G.actions.buyShip?.(b.dataset.buy); });
+  m.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { G.actions.useShip?.(b.dataset.use); });
 };
 
 // ── COLONISE — only by visiting Tom the Colonist; shows upcoming planets ────
