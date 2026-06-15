@@ -9,7 +9,7 @@ import { initUI, openPanel, refreshActivePanel, openBuyPanel } from './ui.js';
 const TILE = S.TILE;
 let zoom = 2;                 // current zoom (mouse wheel changes it)
 let intro = null;             // spawn-in camera animation { t0, dur, from, target }
-function startIntro() { intro = { t0: performance.now(), dur: 1000, from: 0.35, target: 1.8 }; camMode = 'follow'; }
+function startIntro() { intro = { t0: performance.now(), dur: 1000, from: 0.35, target: 1.5 }; camMode = 'follow'; }
 const MAX_ZOOM = 3.2;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -231,7 +231,7 @@ function updateCamera() {
     zoom = intro.from + (intro.target - intro.from) * e;
     G.camera.x = G.me.x - VW / zoom / 2;
     G.camera.y = G.me.y - VH / zoom / 2;
-    if (p >= 1) { intro = null; zoom = 1.8; }
+    if (p >= 1) { intro = null; zoom = 1.5; }
     return;
   }
   if (camMode === 'follow') {
