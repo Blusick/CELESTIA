@@ -8,7 +8,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// DATA_DIR can point at a Render persistent disk so saves survive redeploys.
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const SAVE_FILE = path.join(DATA_DIR, 'world.json');
 
 export const TILE = 32;
@@ -331,6 +332,7 @@ export function randomLandPoint(isl) {
 // ── Persistent state ─────────────────────────────────────────
 export const state = { tiles: {}, market: [], profiles: {} };
 export function loadState() {
+  console.log(`[world] save file → ${SAVE_FILE}`);
   try { if (fs.existsSync(SAVE_FILE)) { const raw = JSON.parse(fs.readFileSync(SAVE_FILE, 'utf8')); state.tiles = raw.tiles || {}; state.market = raw.market || []; state.profiles = raw.profiles || {}; console.log(`[world] loaded ${Object.keys(state.tiles).length} tiles, ${state.market.length} listings, ${Object.keys(state.profiles).length} profiles`); } }
   catch (e) { console.warn('[world] load failed:', e.message); }
 }
