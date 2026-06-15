@@ -88,20 +88,27 @@ export async function payMany(recipients) {
   if (!src) throw new Error('No $CELESTIA token account found in your wallet.');
   const { pubkey: fromAta, decimals, programId } = src;
 
+  console.log('[pay] source', fromAta.toString(), 'decimals', decimals, 'program', programId.toString());
   const tx = new Transaction();
   for (const rcpt of recipients) {
     const to = new PublicKey(rcpt.owner);
     const toAta = await getAssociatedTokenAddress(mint, to, false, programId);
+    let exists = true;
     try { await getAccount(wallet.conn, toAta, 'confirmed', programId); }
-    catch { tx.add(createAssociatedTokenAccountInstruction(from, toAta, to, mint, programId)); }
+    catch { exists = false; tx.add(createAssociatedTokenAccountInstruction(from, toAta, to, mint, programId)); }
     const raw = BigInt(Math.round(rcpt.amount * 10 ** decimals));
+    if (raw <= 0n) throw new Error('amount is 0 — nothing to transfer');
     tx.add(createTransferInstruction(fromAta, toAta, from, raw, [], programId));
+    console.log('[pay] →', rcpt.owner, 'ata', toAta.toString(), 'amount', rcpt.amount, 'raw', raw.toString(), 'ataExisted', exists);
   }
+  if (!tx.instructions.length) throw new Error('transaction has no instructions');
 
   const { blockhash } = await wallet.conn.getLatestBlockhash();
   tx.recentBlockhash = blockhash; tx.feePayer = from;
+  console.log('[pay] sending tx with', tx.instructions.length, 'instruction(s) via Phantom…');
   // Phantom signs + broadcasts. Server polls for the confirmed tx when verifying.
   const { signature } = await p.signAndSendTransaction(tx);
+  console.log('[pay] signature', signature);
   return signature;
 }
 

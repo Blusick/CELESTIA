@@ -298,6 +298,7 @@ setInterval(() => {
       const wp = winWs && players.has(winWs) ? players.get(winWs) : null;
       arena.winner = wp ? wp.name : 'No one';
       const waddr = wp && wp.wallet ? wp.wallet : 'guest (no wallet)';
+      console.log(`[arena] 🏆 winner: ${arena.winner} | wallet: ${waddr}`);
       broadcast({ type: 'chat', id: 'sys', name: '', text: `🏆 Arena champion: ${arena.winner} — wallet ${waddr}`, sys: true });
       for (const ws of arena.parts) if (players.has(ws)) { const p = players.get(ws); p.inArena = false; p.arenaAlive = false; p.x = W.SPAWN_PX.x; p.y = W.SPAWN_PX.y; p.hp = p.maxHp; send(ws, { type: 'revived', x: p.x, y: p.y, hp: p.hp }); }
       arena.parts.clear(); arena.phase = 'waiting'; arena.nextAt = now + ARENA_PERIOD;
@@ -306,6 +307,8 @@ setInterval(() => {
   }
 }, 1000);
 setInterval(broadcastArena, 1000);
+// every minute: log online + total registered players
+setInterval(() => { console.log(`[stats] online: ${players.size} | total registered players: ${Object.keys(W.state.profiles || {}).length}`); }, 60000);
 
 // ── lightweight per-tick player state (static data — name/appearance/gear —
 //    is sent only on join/profile, not every tick) ──

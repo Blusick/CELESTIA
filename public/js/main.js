@@ -26,7 +26,7 @@ function resize() {
 addEventListener('resize', resize); resize();
 
 // floor on how far you can zoom out (≈5× less than fitting the whole map).
-const ZOOM_FLOOR = 0.25;   // allow zooming out 2× further
+const ZOOM_FLOOR = 0.75;   // max dezoom reduced (÷3)
 function minZoom() { return ZOOM_FLOOR; }
 
 // ── input ───────────────────────────────────────────────────
@@ -524,7 +524,9 @@ G.craft = null; G.craftQ = [];
 function startNextCraft() { if (!G.craftQ.length) { G.craft = null; return; } const r = G.craftQ.shift(); G.craft = { output: r.output, ms: r.ms, endAt: performance.now() + r.ms }; }
 setInterval(() => {
   if (G.craft && performance.now() >= G.craft.endAt) {
-    if (invCount() < G.invMax) { G.inv[G.craft.output] = (G.inv[G.craft.output] || 0) + 1; if (G.me) spawnFloater('+1 ' + G.craft.output, G.me.x, G.me.y - 30, '#cfe2ff'); refreshHUD(); refreshActivePanel(); }
+    const out = G.craft.output;
+    const capped = out === 'cookedmeat' && (G.inv.cookedmeat || 0) >= 5;   // cooked steak max 5
+    if (!capped && invCount() < G.invMax) { G.inv[out] = (G.inv[out] || 0) + 1; if (G.me) spawnFloater('+1 ' + out, G.me.x, G.me.y - 30, '#cfe2ff'); refreshHUD(); refreshActivePanel(); }
     startNextCraft();
   }
 }, 250);
@@ -1322,7 +1324,7 @@ async function refreshBalance() {
   document.getElementById('balance').textContent = Math.floor(b).toLocaleString() + ' $CELESTIA';
 }
 
-function syncProfile() { if (!G.guest && wallet.connected) send({ type: 'sync', inv: G.inv, bank: G.bank, equip: G.equip, level: G.level, xp: G.xp, xpNeed: G.xpNeed, maxHp: G.maxHp, stats: G.stats, statPoints: G.statPoints, res: effStat('resistance') }); }
+function syncProfile() { if (wallet.pubkey) send({ type: 'sync', inv: G.inv, bank: G.bank, equip: G.equip, level: G.level, xp: G.xp, xpNeed: G.xpNeed, maxHp: G.maxHp, stats: G.stats, statPoints: G.statPoints, res: effStat('resistance') }); }
 
 // ── boot ────────────────────────────────────────────────────
 async function startGame(asGuest) {
@@ -1371,6 +1373,7 @@ G.actions = {
     toast('🛡️ The Guardian lets you through…');
   },
   startCraft: (id, w) => {
+    if (w.output === 'cookedmeat' && (G.inv.cookedmeat || 0) + G.craftQ.filter(q => q.output === 'cookedmeat').length + (G.craft?.output === 'cookedmeat' ? 1 : 0) >= 5) return toast('Cooked Steak max reached (5).');
     for (const [k, n] of Object.entries(w.cost)) if ((G.inv[k] || 0) < n) return toast(`Need ${n} ${k}.`);
     if (invCount() + G.craftQ.length >= G.invMax) return toast('Inventory full.');
     for (const [k, n] of Object.entries(w.cost)) G.inv[k] -= n;
@@ -1383,7 +1386,16 @@ G.actions = {
 
 // ── UI buttons ──────────────────────────────────────────────
 function chosenUsername() { return (document.getElementById('userName')?.value || '').trim().slice(0, 16); }
-document.getElementById('btnGuest').onclick = () => { if (!chosenUsername()) return toast('Please choose a username first.'); G.chosenName = chosenUsername(); G.guest = true; startGame(true); };
+function chosenWallet() { return (document.getElementById('userWallet')?.value || '').trim(); }
+const isSolAddr = a => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+document.getElementById('btnGuest').onclick = async () => {
+  if (!chosenUsername()) return toast('Please choose a username first.');
+  const w = chosenWallet();
+  if (!isSolAddr(w)) return toast('Enter a valid Solana wallet address to play as guest.');
+  G.chosenName = chosenUsername();
+  wallet.pubkey = w;                        // guests are identified by their entered wallet (no signing)
+  G.guest = true; startGame(true);
+};
 document.getElementById('btnConnect').onclick = async () => {
   if (!chosenUsername()) return toast('Please choose a username first.');
   if (!hasPhantom()) { toast('Install Phantom wallet first.'); window.open('https://phantom.app/', '_blank'); return; }
