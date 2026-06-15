@@ -1445,52 +1445,171 @@ initUI({ toast, refreshBalance });
 requestAnimationFrame(render);
 setInterval(() => { updateMovement(); updateCamera(); }, 1000 / 60);
 
-// ── animated celestial login background: a deep-space galaxy (Milky Way band + stars) ──
+// ── animated login scene: starry night, Milky Way, moving shooting stars, mountains + a pixel hero ──
 function initLoginBg() {
   const cv = document.getElementById('loginBg'); if (!cv) return;
   const c = cv.getContext('2d');
-  const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
+  let W = 0, H = 0, dpr = 1;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  // a stable seeded random so the scene (stars / mountains) doesn't reshuffle on resize
+  let seed = 0x9e3779b1; const srnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+
+  // the Milky Way runs diagonally from upper-left to lower-right through the centre
+  function bandDist(nx, ny) { // signed distance of a normalised point to the galaxy centre line
+    const ax = 0.30, ay = 0.10, bx = 0.78, by = 0.92;          // line endpoints (normalised)
+    const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+    return Math.abs((nx - ax) * dy - (ny - ay) * dx) / L;
+  }
+  let stars = [], clouds = [], mountains = [];
+  function build() {
+    seed = 0x9e3779b1;
+    // stars — denser and brighter close to the Milky Way band
+    stars = [];
+    for (let i = 0; i < 520; i++) {
+      const nx = srnd(), ny = srnd() * 0.86;                    // keep stars above the ground line
+      const near = Math.max(0, 1 - bandDist(nx, ny) / 0.16);
+      if (srnd() > 0.35 + near * 0.6) continue;                 // thin out away from the band
+      stars.push({ x: nx, y: ny, z: srnd(), p: srnd() * 6.28, warm: srnd() < 0.12, big: srnd() < 0.05 });
+    }
+    // soft nebula clouds strung along the band
+    clouds = [];
+    for (let i = 0; i <= 14; i++) {
+      const f = i / 14, nx = 0.30 + (0.78 - 0.30) * f + (srnd() - 0.5) * 0.06, ny = 0.10 + (0.92 - 0.10) * f + (srnd() - 0.5) * 0.06;
+      clouds.push({ x: nx, y: ny, r: rnd(0.10, 0.20), hue: srnd() < 0.5 ? 'b' : 'p', a: rnd(0.05, 0.12) });
+    }
+    // two layered mountain silhouettes on the horizon
+    mountains = [];
+    for (const layer of [{ base: 0.86, amp: 0.07, col: '#070c18', step: 0.10 }, { base: 0.90, amp: 0.05, col: '#04070f', step: 0.07 }]) {
+      const pts = [];
+      for (let x = -0.05; x <= 1.05; x += layer.step) pts.push({ x, y: layer.base - Math.abs(srnd() - 0.3) * layer.amp });
+      mountains.push({ pts, col: layer.col });
+    }
+  }
+  const resize = () => { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; c.setTransform(dpr, 0, 0, dpr, 0, 0); build(); };
   resize(); addEventListener('resize', resize);
-  const stars = Array.from({ length: 320 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * 6 }));
-  // optional custom background photo (drop /assets/login-bg.jpg). Falls back to procedural starfield.
-  const bg = new Image(); let bgReady = false; bg.onload = () => { bgReady = true; }; bg.src = '/assets/login-bg.jpg';
-  const t0 = performance.now();
-  function frame() {
+
+  // shooting stars
+  const shooters = []; let nextShot = 0;
+  function spawnShot() {
+    const fromLeft = Math.random() < 0.5;
+    const x = fromLeft ? rnd(-0.1, 0.45) * W : rnd(0.55, 1.1) * W;
+    const y = rnd(0.02, 0.42) * H;
+    const ang = (fromLeft ? rnd(0.18, 0.42) : Math.PI - rnd(0.18, 0.42));   // shallow, heading down + inward
+    const sp = rnd(620, 980);
+    shooters.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max: rnd(0.9, 1.5), len: rnd(120, 230) });
+  }
+
+  // offscreen pixel hero (back view, gazing up) — drawn small then blitted big for a crisp pixel look
+  const ho = document.createElement('canvas'); ho.width = 64; ho.height = 100; const hg = ho.getContext('2d');
+  function drawHero(t) {
+    hg.clearRect(0, 0, 64, 100);
+    const sway = Math.sin(t * 1.5) * 2.4;                          // gentle cape drift
+    // ── cape (behind) ──
+    hg.fillStyle = '#566273';
+    hg.beginPath(); hg.moveTo(23, 41); hg.quadraticCurveTo(11 - sway, 62, 15 - sway, 86); hg.lineTo(34, 88); hg.lineTo(41, 41); hg.closePath(); hg.fill();
+    hg.fillStyle = '#76828f';
+    hg.beginPath(); hg.moveTo(25, 43); hg.quadraticCurveTo(17 - sway, 63, 21 - sway, 83); hg.lineTo(35, 85); hg.lineTo(38, 43); hg.closePath(); hg.fill();
+    hg.fillStyle = '#9aa6b4';                                      // left rim of the cape catching sky light
+    hg.beginPath(); hg.moveTo(25, 43); hg.quadraticCurveTo(17 - sway, 63, 21 - sway, 83); hg.lineTo(23 - sway, 83); hg.quadraticCurveTo(19 - sway, 63, 27, 45); hg.closePath(); hg.fill();
+    // ── legs + boots ──
+    hg.fillStyle = '#574736'; hg.fillRect(27, 74, 4, 14); hg.fillRect(33, 74, 4, 14);
+    hg.fillStyle = '#3c2814'; hg.fillRect(26, 87, 6, 8); hg.fillRect(33, 87, 6, 8);
+    // ── tunic ──
+    hg.fillStyle = '#d4c6a6'; hg.beginPath(); hg.moveTo(24, 45); hg.lineTo(40, 45); hg.lineTo(38, 75); hg.lineTo(26, 75); hg.closePath(); hg.fill();
+    hg.fillStyle = '#b6a684'; hg.fillRect(33, 47, 6, 28);          // right-side shade
+    hg.fillStyle = '#6e4a2a'; hg.fillRect(25, 67, 15, 4);          // belt
+    // ── arms ──
+    hg.fillStyle = '#e7c39c'; hg.fillRect(21, 50, 4, 12); hg.fillRect(40, 50, 4, 12);
+    hg.fillStyle = '#c7b994'; hg.fillRect(21, 47, 5, 8); hg.fillRect(39, 47, 5, 8);
+    // ── head + messy hair (tilted up: mostly hair, a sliver of skin) ──
+    hg.fillStyle = '#e7c39c'; hg.fillRect(29, 39, 6, 6);          // neck
+    hg.fillStyle = '#e7c39c'; hg.beginPath(); hg.arc(32, 32, 7.5, 0, 7); hg.fill();
+    hg.fillStyle = '#43291a';                                      // hair base
+    hg.beginPath(); hg.arc(32, 30, 10, Math.PI * 0.92, Math.PI * 2.08); hg.fill();
+    hg.fillRect(22, 27, 20, 8);
+    for (const [hx, hy, hw, hh] of [[21, 24, 5, 7], [27, 21, 6, 7], [33, 22, 6, 7], [39, 25, 5, 7], [24, 22, 5, 6]]) { hg.beginPath(); hg.ellipse(hx + hw / 2, hy + hh / 2, hw / 2, hh / 2, 0, 0, 7); hg.fill(); } // tufts
+    hg.fillStyle = '#5f3d24'; hg.fillRect(25, 26, 14, 4);          // hair midtone
+    hg.fillStyle = '#7a4f2e'; hg.fillRect(27, 24, 9, 2);           // hair highlight
+    // sky rim-light on hair + left shoulder
+    hg.fillStyle = 'rgba(170,195,230,.5)'; hg.fillRect(27, 21, 9, 1); hg.fillRect(22, 47, 3, 2);
+  }
+
+  const t0 = performance.now(); let last = t0;
+  function frame(now) {
     const login = document.getElementById('login');
-    if (!login || login.classList.contains('hidden')) return;            // stop once the game starts
-    const W = cv.width, H = cv.height, t = (performance.now() - t0) / 1000;
-    if (bgReady) {
-      // cover-fit the custom photo
-      const ir = bg.width / bg.height, cr = W / H;
-      let dw = W, dh = H, dx = 0, dy = 0;
-      if (ir > cr) { dh = H; dw = H * ir; dx = (W - dw) / 2; } else { dw = W; dh = W / ir; dy = (H - dh) / 2; }
-      c.drawImage(bg, dx, dy, dw, dh);
-      // subtle twinkling stars on top
-      for (const s of stars) { const tw = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.3 + s.p)); c.fillStyle = `rgba(225,235,255,${0.4 * s.z * tw})`; c.fillRect(s.x * W, s.y * H, 0.7 + s.z * 1.6, 0.7 + s.z * 1.6); }
-      requestAnimationFrame(frame); return;
+    if (!login || login.classList.contains('hidden')) return;     // stop once the game starts
+    const t = (now - t0) / 1000, dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const hY = H * 0.80;                                           // horizon / ground line
+
+    // ── sky ──
+    const sky = c.createLinearGradient(0, 0, 0, hY);
+    sky.addColorStop(0, '#060a16'); sky.addColorStop(0.55, '#070d1c'); sky.addColorStop(1, '#0a1428');
+    c.fillStyle = sky; c.fillRect(0, 0, W, hY);
+    // soft blue horizon glow behind the hero
+    const glow = c.createRadialGradient(W * 0.5, hY, 0, W * 0.5, hY, H * 0.55);
+    glow.addColorStop(0, 'rgba(40,80,150,.28)'); glow.addColorStop(1, 'rgba(40,80,150,0)');
+    c.fillStyle = glow; c.fillRect(0, 0, W, hY);
+
+    // ── Milky Way nebula clouds ──
+    for (const cl of clouds) {
+      const x = cl.x * W, y = cl.y * H, r = cl.r * Math.min(W, H) * 1.4;
+      const g2 = c.createRadialGradient(x, y, 0, x, y, r);
+      const col = cl.hue === 'b' ? '120,165,235' : '150,120,210';
+      g2.addColorStop(0, `rgba(${col},${cl.a})`); g2.addColorStop(1, `rgba(${col},0)`);
+      c.fillStyle = g2; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
     }
-    // deep space
-    const g = c.createRadialGradient(W * 0.5, H * 0.44, 0, W * 0.5, H * 0.44, Math.max(W, H) * 0.85);
-    g.addColorStop(0, '#0c1430'); g.addColorStop(0.6, '#070b1c'); g.addColorStop(1, '#04050d');
-    c.fillStyle = g; c.fillRect(0, 0, W, H);
-    // diagonal Milky Way band with bright cores and warm dust
-    c.save(); c.translate(W / 2, H / 2); c.rotate(-0.46);
-    const drift = Math.sin(t * 0.05) * 18;
-    const band = c.createLinearGradient(0, -H * 0.45, 0, H * 0.45);
-    band.addColorStop(0, 'rgba(30,55,110,0)'); band.addColorStop(0.44, 'rgba(70,120,205,0.16)');
-    band.addColorStop(0.5, 'rgba(125,165,235,0.26)'); band.addColorStop(0.56, 'rgba(70,120,205,0.16)'); band.addColorStop(1, 'rgba(30,55,110,0)');
-    c.fillStyle = band; c.fillRect(-W, -H * 0.45 + drift, 2 * W, H * 0.9);
-    for (let i = 0; i < 11; i++) {
-      const x = -W * 0.5 + (i / 10) * W + Math.sin(t * 0.1 + i) * 10, y = drift + Math.sin(i * 1.3) * 20, rr = 70 + (i % 4) * 45, warm = i % 3 === 0;
-      const cg = c.createRadialGradient(x, y, 0, x, y, rr);
-      cg.addColorStop(0, warm ? 'rgba(200,150,120,0.10)' : 'rgba(150,185,240,0.13)'); cg.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = cg; c.beginPath(); c.arc(x, y, rr, 0, 7); c.fill();
+
+    // ── stars ──
+    for (const s of stars) {
+      const tw = 0.4 + 0.6 * Math.abs(Math.sin(t * 1.2 + s.p)), b = (0.35 + s.z * 0.65) * tw;
+      const sz = (s.big ? 1.7 : 1) * (0.7 + s.z * 1.4);
+      c.fillStyle = s.warm ? `rgba(255,225,195,${0.7 * b})` : `rgba(214,228,255,${0.8 * b})`;
+      c.fillRect(s.x * W, s.y * H, sz, sz);
+      if (s.big) { c.fillStyle = `rgba(220,235,255,${0.18 * b})`; c.fillRect(s.x * W - sz, s.y * H - sz, sz * 3, sz * 3); }
     }
-    c.restore();
-    // twinkling stars
-    for (const s of stars) { const tw = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.3 + s.p)); const b = s.z * tw, sz = 0.7 + s.z * 1.8; c.fillStyle = `rgba(${(205 + 30 * s.z) | 0},${(218 + 20 * s.z) | 0},255,${0.75 * b})`; c.fillRect(s.x * W, s.y * H, sz, sz); }
+
+    // ── shooting stars ──
+    if (t > nextShot) { spawnShot(); if (Math.random() < 0.3) spawnShot(); nextShot = t + rnd(0.7, 2.0); }
+    for (let i = shooters.length - 1; i >= 0; i--) {
+      const sh = shooters[i]; sh.life += dt; sh.x += sh.vx * dt; sh.y += sh.vy * dt;
+      const k = sh.life / sh.max; if (k >= 1 || sh.y > hY) { shooters.splice(i, 1); continue; }
+      const fade = k < 0.15 ? k / 0.15 : (1 - k);                  // ease in then out
+      const ux = sh.vx / Math.hypot(sh.vx, sh.vy), uy = sh.vy / Math.hypot(sh.vx, sh.vy);
+      const tx = sh.x - ux * sh.len, ty = sh.y - uy * sh.len;
+      const tg = c.createLinearGradient(sh.x, sh.y, tx, ty);
+      tg.addColorStop(0, `rgba(255,255,255,${0.9 * fade})`); tg.addColorStop(0.4, `rgba(190,215,255,${0.4 * fade})`); tg.addColorStop(1, 'rgba(170,200,255,0)');
+      c.strokeStyle = tg; c.lineWidth = 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(sh.x, sh.y); c.lineTo(tx, ty); c.stroke();
+      c.fillStyle = `rgba(255,255,255,${0.95 * fade})`; c.beginPath(); c.arc(sh.x, sh.y, 1.8, 0, 7); c.fill();
+      c.fillStyle = `rgba(200,225,255,${0.3 * fade})`; c.beginPath(); c.arc(sh.x, sh.y, 5, 0, 7); c.fill();
+    }
+
+    // ── mountains ──
+    for (const m of mountains) {
+      c.fillStyle = m.col; c.beginPath(); c.moveTo(-10, H);
+      for (const p of m.pts) c.lineTo(p.x * W, p.y * H);
+      c.lineTo(W + 10, H); c.closePath(); c.fill();
+    }
+    // ── ground (cracked stone) ──
+    c.fillStyle = '#05080f'; c.fillRect(0, hY - 1, W, H - hY + 1);
+    c.strokeStyle = 'rgba(90,140,210,.22)'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, hY); c.lineTo(W, hY); c.stroke();  // rim light on the ridge
+    c.strokeStyle = 'rgba(120,150,190,.06)'; c.lineWidth = 1;
+    for (let i = 0; i < 26; i++) {                                  // faint slab cracks
+      const gx = ((i * 137.5) % 100) / 100 * W, gy = hY + ((i * 53) % 100) / 100 * (H - hY);
+      c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx + 26, gy + 6); c.stroke();
+    }
+    // grass tuft (bottom-right, like the reference)
+    c.strokeStyle = 'rgba(70,110,70,.8)'; c.lineWidth = 1.5;
+    for (let i = 0; i < 6; i++) { const gx = W * 0.86 + i * 4; c.beginPath(); c.moveTo(gx, H - 6); c.quadraticCurveTo(gx + 3, H - 22, gx + 7, H - 30); c.stroke(); }
+
+    // ── hero, standing on the ridge gazing up ──
+    drawHero(t);
+    const hh = Math.min(H * 0.30, 300), hw = hh * (64 / 100);
+    c.imageSmoothingEnabled = false;
+    c.drawImage(ho, W * 0.5 - hw / 2, hY - hh + 6, hw, hh);
+    c.imageSmoothingEnabled = true;
+
     requestAnimationFrame(frame);
   }
-  frame();
+  requestAnimationFrame(frame);
 }
 initLoginBg();
