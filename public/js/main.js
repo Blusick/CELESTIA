@@ -600,9 +600,10 @@ function render() {
   // built ships parked on island
   for (const s of G.builtShips) S.drawShip(ctx, s.x, s.y, s.kind, 'right', (frameT >> 3) % 2);
 
-  // creatures
+  // creatures (only those on screen)
   for (const c of G.creatures.values()) {
-    if (c.dead) continue;
+    if (c.dead || c.x == null) continue;
+    if (c.x < vx0 - 40 || c.x > vx1 + 40 || c.y < vy0 - 60 || c.y > vy1 + 40) continue;   // off-screen → skip
     S.drawOutlined(ctx, c.x, c.y, (cc, ox, oy) => S.drawCreature(cc, ox, oy, c, frameT >> 3), { sz: 80, ax: 40, ay: 50, off: 2 });
     drawBar(c.x, c.y - 16, c.hp / c.maxHp, '#ff5a6e', 18);
   }
@@ -612,8 +613,9 @@ function render() {
   for (const s of smoke) { ctx.globalAlpha = s.life * 0.5; ctx.fillStyle = '#cdd6e6'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
 
-  // players
+  // players (only those on screen)
   for (const p of G.players.values()) {
+    if (p.x == null || p.x < vx0 - 40 || p.x > vx1 + 40 || p.y < vy0 - 70 || p.y > vy1 + 40) continue;   // off-screen → skip
     if (p.inAir && p.moving) spawnSmoke(p.x, p.y);
     drawNameTag(p);
     S.drawPlayer(ctx, p.x, p.y, p.appearance, p.dir, p.moving ? (frameT >> 2) : 0, p.inAir, p.ship, p.gear);
