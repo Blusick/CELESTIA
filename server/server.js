@@ -309,18 +309,26 @@ function handle(ws, p, m) {
 
 // ── Arena: 30-minute Battle Royale cycle ─────────────────────
 const ARENA_PERIOD = 30 * 60 * 1000, BATTLE_MS = 3 * 60 * 1000;   // battle every 30 min, lasts 3 min
-const arena = { phase: 'waiting', nextAt: Date.now() + ARENA_PERIOD, endsAt: 0, winner: null, parts: new Set() };
+const arena = { phase: 'waiting', nextAt: Date.now() + ARENA_PERIOD, endsAt: 0, winner: null, parts: new Set(), warn20: false, warn10: false };
 function arenaPub() { return { phase: arena.phase, remaining: Math.max(0, (arena.phase === 'battle' ? arena.endsAt : arena.nextAt) - Date.now()), winner: arena.winner, count: arena.parts.size }; }
 function broadcastArena() { broadcast({ type: 'arena', ...arenaPub() }); }
+function rearmArena(now) { arena.nextAt = now + ARENA_PERIOD; arena.warn20 = false; arena.warn10 = false; }   // start a fresh wait cycle
 setInterval(() => {
   const now = Date.now();
+  if (arena.phase === 'waiting') {
+    const rem = arena.nextAt - now;
+    // big bold heads-up at 20 min and 10 min before each battle
+    if (!arena.warn20 && rem <= 20 * 60 * 1000 && rem > 10 * 60 * 1000) { arena.warn20 = true; broadcast({ type: 'announce', text: 'Next Arena Battle starts in 20 min…' }); }
+    if (!arena.warn10 && rem <= 10 * 60 * 1000 && rem > 0) { arena.warn10 = true; broadcast({ type: 'announce', text: 'Next Arena Battle starts in 10 min…' }); }
+  }
   if (arena.phase === 'waiting' && now >= arena.nextAt) {
     const alive = [...arena.parts].filter(ws => players.has(ws) && players.get(ws).inArena);
     if (alive.length >= 1) {
       arena.phase = 'battle'; arena.endsAt = now + BATTLE_MS; arena.winner = null;
       for (const ws of alive) { const p = players.get(ws); p.hp = p.maxHp; p.arenaAlive = true; }
-      broadcast({ type: 'chat', id: 'sys', name: '', text: '⚔️ The Arena Battle Royale has begun!', sys: true });
-    } else arena.nextAt = now + ARENA_PERIOD;
+      broadcast({ type: 'announce', text: 'Battle started in the Arena!' });
+      broadcast({ type: 'chat', id: 'sys', name: '', text: '⚔️ Battle started in the Arena!', sys: true });
+    } else rearmArena(now);
     broadcastArena();
   } else if (arena.phase === 'battle') {
     const alive = [...arena.parts].filter(ws => players.has(ws) && players.get(ws).arenaAlive && players.get(ws).hp > 0);
@@ -331,9 +339,10 @@ setInterval(() => {
       arena.winner = wp ? wp.name : 'No one';
       const waddr = wp && wp.wallet ? wp.wallet : 'guest (no wallet)';
       console.log(`[arena] 🏆 winner: ${arena.winner} | wallet: ${waddr}`);
+      broadcast({ type: 'announce', text: `🏆 ${arena.winner} won the Arena Battle!` });
       broadcast({ type: 'chat', id: 'sys', name: '', text: `🏆 Arena champion: ${arena.winner} — wallet ${waddr}`, sys: true });
       for (const ws of arena.parts) if (players.has(ws)) { const p = players.get(ws); p.inArena = false; p.arenaAlive = false; p.x = W.SPAWN_PX.x; p.y = W.SPAWN_PX.y; p.hp = p.maxHp; send(ws, { type: 'revived', x: p.x, y: p.y, hp: p.hp }); }
-      arena.parts.clear(); arena.phase = 'waiting'; arena.nextAt = now + ARENA_PERIOD;
+      arena.parts.clear(); arena.phase = 'waiting'; rearmArena(now);
       broadcastArena();
     }
   }

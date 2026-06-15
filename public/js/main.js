@@ -9,7 +9,7 @@ import { initUI, openPanel, refreshActivePanel, openBuyPanel } from './ui.js';
 const TILE = S.TILE;
 let zoom = 2;                 // current zoom (mouse wheel changes it)
 let intro = null;             // spawn-in camera animation { t0, dur, from, target }
-function startIntro() { intro = { t0: performance.now(), dur: 1000, from: 0.35, target: 2.2 }; camMode = 'follow'; }
+function startIntro() { intro = { t0: performance.now(), dur: 1000, from: 0.35, target: 1.8 }; camMode = 'follow'; }
 const MAX_ZOOM = 3.2;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -231,7 +231,7 @@ function updateCamera() {
     zoom = intro.from + (intro.target - intro.from) * e;
     G.camera.x = G.me.x - VW / zoom / 2;
     G.camera.y = G.me.y - VH / zoom / 2;
-    if (p >= 1) { intro = null; zoom = 2.2; }
+    if (p >= 1) { intro = null; zoom = 1.8; }
     return;
   }
   if (camMode === 'follow') {
@@ -802,13 +802,13 @@ function drawArena(isl, t) {
   ctx.fillStyle = '#3a3038'; ctx.beginPath(); ctx.arc(cx, cy + 2, 4, 0, 7); ctx.fill();
   ctx.fillStyle = '#ff8a3d'; ctx.beginPath(); ctx.arc(cx, cy - 1 + Math.sin(t * 4) * 1, 3, 0, 7); ctx.fill();
   ctx.fillStyle = '#ffd08a'; ctx.beginPath(); ctx.arc(cx, cy - 2, 1.6, 0, 7); ctx.fill();
-  // countdown / winner text
+  // arena texts: header inside top, countdown inside bottom (symmetric)
   const a = G.arena || {}; ctx.textAlign = 'center';
-  ctx.font = '24px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#3a2614'; ctx.fillText('⚔ ARENA', cx, py + 22);
-  ctx.font = '26px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#1f8f4d'; ctx.fillText('1M $CELESTIA for the Winner', cx, py + 48);
+  ctx.font = '22px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#3a2614'; ctx.fillText('⚔ ARENA', cx, cy - hh * 0.40);
+  ctx.font = '18px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#1f8f4d'; ctx.fillText('1M $CELESTIA for the Winner', cx, cy - hh * 0.40 + 20);
   ctx.font = '28px "Vanilla Caramel", sans-serif';
-  if (a.phase === 'battle') { ctx.fillStyle = '#b02030'; ctx.fillText('BATTLE  ' + fmtTime(a.remaining || 0), cx, cy - hh * 0.32); }
-  else { ctx.fillStyle = '#5a3a1a'; ctx.fillText('Next: ' + fmtTime(a.remaining || 0), cx, cy - hh * 0.32); if (a.winner) { ctx.font = '12px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#2f7a32'; ctx.fillText('🏆 ' + a.winner, cx, cy - hh * 0.32 + 18); } }
+  if (a.phase === 'battle') { ctx.fillStyle = '#b02030'; ctx.fillText('BATTLE  ' + fmtTime(a.remaining || 0), cx, cy + hh * 0.44); }
+  else { ctx.fillStyle = '#5a3a1a'; ctx.fillText('Next: ' + fmtTime(a.remaining || 0), cx, cy + hh * 0.44); if (a.winner) { ctx.font = '12px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#2f7a32'; ctx.fillText('🏆 ' + a.winner, cx, cy + hh * 0.44 - 18); } }
 }
 function drawNode(n) {
   if (n.dead) { if (performance.now() > n.respawn) { n.dead = false; n.hp = 3; } else return; }
@@ -1227,6 +1227,13 @@ function toast(msg, ms = 2600) {
   const el = document.getElementById('toast'); el.textContent = msg; el.classList.remove('hidden');
   clearTimeout(toastT); toastT = setTimeout(() => el.classList.add('hidden'), ms);
 }
+let announceT;
+function showAnnounce(text, ms = 5000) {
+  const el = document.getElementById('announce'); if (!el) return;
+  el.textContent = text; el.classList.remove('hidden');
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');   // restart the entry animation
+  clearTimeout(announceT); announceT = setTimeout(() => el.classList.add('hidden'), ms);
+}
 
 // ── network wiring ──────────────────────────────────────────
 function wireNet() {
@@ -1287,6 +1294,7 @@ function wireNet() {
   on('died', () => { G.hp = 0; if (!G.me.inArena) document.getElementById('deathBanner').classList.remove('hidden'); });
   on('revived', m => { G.me.x = m.x; G.me.y = m.y; G.hp = m.hp; G.me.inArena = false; document.getElementById('deathBanner').classList.add('hidden'); refreshHUD(); });
   on('arena', m => { G.arena = m; });
+  on('announce', m => showAnnounce(m.text));
   on('enteredArena', m => { G.me.inArena = true; G.me.x = m.x; G.me.y = m.y; camMode = 'follow'; setZoom(2.2); toast('⚔️ You entered the Arena! You cannot leave until the battle ends.', 5000); });
   on('arenaDenied', m => toast('🔒 ' + (m.reason || 'Entry refused.'), 4000));
   on('tiles', m => { for (const t of m.tiles) G.tiles[tileKey(t.x, t.y)] = { ...t }; });
