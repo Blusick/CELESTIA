@@ -330,14 +330,14 @@ export function randomLandPoint(isl) {
 }
 
 // ── Persistent state ─────────────────────────────────────────
-export const state = { tiles: {}, market: [], profiles: {} };
+export const state = { tiles: {}, market: [], profiles: {}, banned: [] };
 export function loadState() {
   console.log(`[world] save file → ${SAVE_FILE}`);
-  try { if (fs.existsSync(SAVE_FILE)) { const raw = JSON.parse(fs.readFileSync(SAVE_FILE, 'utf8')); state.tiles = raw.tiles || {}; state.market = raw.market || []; state.profiles = raw.profiles || {}; console.log(`[world] loaded ${Object.keys(state.tiles).length} tiles, ${state.market.length} listings, ${Object.keys(state.profiles).length} profiles`); } }
+  try { if (fs.existsSync(SAVE_FILE)) { const raw = JSON.parse(fs.readFileSync(SAVE_FILE, 'utf8')); state.tiles = raw.tiles || {}; state.market = raw.market || []; state.profiles = raw.profiles || {}; state.banned = raw.banned || []; console.log(`[world] loaded ${Object.keys(state.tiles).length} tiles, ${state.market.length} listings, ${Object.keys(state.profiles).length} profiles, ${state.banned.length} banned`); } }
   catch (e) { console.warn('[world] load failed:', e.message); }
 }
 let saveTimer = null;
-export function saveState() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(SAVE_FILE, JSON.stringify({ tiles: state.tiles, market: state.market, profiles: state.profiles })); } catch (e) { console.warn('[world] save failed:', e.message); } }, 400); }
+export function saveState() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(SAVE_FILE, JSON.stringify({ tiles: state.tiles, market: state.market, profiles: state.profiles, banned: state.banned })); } catch (e) { console.warn('[world] save failed:', e.message); } }, 400); }
 
 // ── Creatures ────────────────────────────────────────────────
 export const creatures = new Map();

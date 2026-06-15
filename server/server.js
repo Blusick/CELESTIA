@@ -126,6 +126,7 @@ wss.on('connection', (ws, req) => {
     x: W.SPAWN_PX.x, y: W.SPAWN_PX.y, dir: 'down', moving: false,
     level: 1, xp: 0, hp: 100, maxHp: 100, inAir: false, lastChat: 0, inArena: false, arenaAlive: false,
     stats: { health: 0, strength: 0, agility: 0, resistance: 0 }, statPoints: 0,
+    _lastLvl: 1, _lastSyncT: 0, _lastRes: null,                    // anti-cheat baselines
     appearance: { skin: '#f0c080', shirt: '#7c8a4a', pants: '#2b3a63', shoes: '#5a3a22', hat: 'none', hatColor: '#ff5577', glasses: false },
     ship: 'scout',
   };
@@ -151,12 +152,38 @@ function pub(p) {
     appearance: p.appearance, ship: p.ship, inArena: p.inArena, gear: p.gear || null };
 }
 function resist(p, dmg) { return dmg * 100 / (100 + (p.res != null ? p.res : (p.stats?.resistance || 0))); }   // Resistance (incl. equipped shield) mitigates incoming damage
+// ── anti-cheat: ban impossible level jumps & resource floods (counts inv+bank so banking isn't a false positive) ──
+function totalRes(m, r) { return (Number(m.inv?.[r]) || 0) + (Number(m.bank?.[r]) || 0); }
+function banPlayer(ws, p, reason) {
+  console.warn(`[ban] ${p.name} (${p.wallet || 'no wallet'}) — ${reason}`);
+  if (p.wallet && !W.state.banned.includes(p.wallet)) { W.state.banned.push(p.wallet); W.saveState(); }
+  try { send(ws, { type: 'kicked', reason: 'You were banned for cheating.' }); ws.close(); } catch {}
+  return true;
+}
+function antiCheat(ws, p, m) {
+  const now = Date.now();
+  if (typeof m.level === 'number') {
+    if (m.level > 50) return banPlayer(ws, p, `impossible level ${m.level}`);
+    if (p._lastLvl != null && m.level - p._lastLvl >= 2) return banPlayer(ws, p, `level jump ${p._lastLvl}→${m.level}`);
+    p._lastLvl = Math.min(50, m.level);
+  }
+  const cur = { wood: totalRes(m, 'wood'), iron: totalRes(m, 'iron'), gold: totalRes(m, 'gold') };
+  if (p._lastRes && p._lastSyncT) {
+    const elapsed = Math.max(0.001, (now - p._lastSyncT) / 1000);
+    for (const r of ['wood', 'iron', 'gold']) {
+      const d = cur[r] - (p._lastRes[r] || 0);
+      if (d >= 10 && d > 8 * elapsed) return banPlayer(ws, p, `gathered ${d} ${r} in ${elapsed.toFixed(1)}s`);
+    }
+  }
+  p._lastRes = cur; p._lastSyncT = now;
+  return false;
+}
 // creature equipment drops: 10% chance per slot; bonus by creature (sheep +2, skeleton +4, alien +10)
 const DROP_SRC = { sheep: 'sheep', gargoyle: 'skeleton', alien: 'alien' };
 const DROP_BONUS = { sheep: 2, skeleton: 4, alien: 10 };
 function rollDrops(kind) {
   const src = DROP_SRC[kind] || 'skeleton', bonus = DROP_BONUS[src] || 2, out = [];
-  for (const slot of ['shoes', 'bottom', 'top', 'shield']) if (Math.random() < 0.10) out.push({ slot, src, bonus });
+  for (const slot of ['shoes', 'bottom', 'top', 'shield']) if (Math.random() < 0.05) out.push({ slot, src, bonus });   // 5% per slot
   return out;
 }
 function saveProfile(p) {                                            // persist a wallet's progress to disk
@@ -183,10 +210,11 @@ function handle(ws, p, m) {
       if (m.gear) p.gear = m.gear;                                   // worn equipment (for visible armour)
       if (m.ship) p.ship = m.ship;
       if (typeof m.wallet === 'string' && m.wallet && m.wallet !== p.wallet) {   // only on FIRST wallet link, not every equip/profile update
+        if ((W.state.banned || []).includes(m.wallet)) { try { send(ws, { type: 'kicked', reason: 'This wallet is banned.' }); ws.close(); } catch {} return; }
         p.wallet = m.wallet;
         const sv = W.state.profiles[p.wallet];                       // restore a saved profile
         if (sv) {
-          if (typeof sv.level === 'number') p.level = sv.level;
+          if (typeof sv.level === 'number') { p.level = sv.level; p._lastLvl = sv.level; }   // baseline for anti-cheat
           if (typeof sv.xp === 'number') p.xp = sv.xp;
           if (typeof sv.maxHp === 'number') { p.maxHp = sv.maxHp; p.hp = sv.maxHp; }
           if (sv.appearance) p.appearance = sv.appearance;
@@ -201,10 +229,11 @@ function handle(ws, p, m) {
       break;
     }
     case 'sync': {                                                   // client persists inventory/bank/equipment/progress
+      if (antiCheat(ws, p, m)) break;                               // banned → stop
       if (m.inv) p.inv = m.inv;
       if (m.bank) p.bank = m.bank;
       if (m.equip) p.equip = m.equip;
-      if (typeof m.level === 'number') p.level = m.level;
+      if (typeof m.level === 'number') p.level = Math.min(50, m.level);
       if (typeof m.xp === 'number') p.xp = m.xp;
       if (typeof m.maxHp === 'number') p.maxHp = m.maxHp;
       if (m.stats) p.stats = m.stats;
@@ -238,7 +267,7 @@ function handle(ws, p, m) {
         c.dead = true; c.respawnAt = Date.now() + (c.respawnMs || W.CREATURE_RESPAWN_MS);
         p.xp += c.xp;
         const need = xpForLevel(p.level);
-        if (p.xp >= need) { p.xp -= need; p.level++; p.hp = p.maxHp; }   // maxHp now comes from Health points (client)
+        if (p.xp >= need && p.level < 50) { p.xp -= need; p.level++; p.hp = p.maxHp; }   // cap level 50; maxHp from Health points (client)
         const drops = rollDrops(c.kind);                            // 10% per equipment slot
         send(ws, { type: 'kill', cid: c.id, kind: c.kind, xp: c.xp, level: p.level, xpNow: p.xp, xpNeed: xpForLevel(p.level), hp: p.hp, maxHp: p.maxHp, drops });
         saveProfile(p);                                              // persist level/xp gains

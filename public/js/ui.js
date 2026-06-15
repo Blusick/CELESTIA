@@ -285,8 +285,9 @@ function wireMarket(m) {
     } catch (e) { env.toast('Cancelled: ' + (e.message || e)); }
   });
 }
-PANELS.marketplace = () => nearNpc('marketplace') ? marketPanel() : locatorPanel('marketplace');
-WIRE.marketplace = (m) => nearNpc('marketplace') ? wireMarket(m) : wireLocator(m);
+function marketSoonPanel() { return `${close()}<h2>🛒 Marketplace</h2><p class="muted" style="text-align:center;margin-top:14px"><b>Trader Joe:</b> "The marketplace will open soon!"</p>`; }
+PANELS.marketplace = () => nearNpc('marketplace') ? marketSoonPanel() : locatorPanel('marketplace');
+WIRE.marketplace = (m) => { if (!nearNpc('marketplace')) wireLocator(m); };
 
 // ── ARMY ────────────────────────────────────────────────────
 const UNITS = {

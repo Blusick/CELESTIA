@@ -18,9 +18,8 @@
     <h1 class="logo">CELES<span>TIA</span></h1>
     <p class="tagline">Build your islands in the clouds.</p>
     <input id="userName" class="login-input" type="text" maxlength="16" placeholder="Choose a username" autocomplete="off">
-    <input id="userWallet" class="login-input" type="text" maxlength="48" placeholder="Your Solana wallet address (for guests)" autocomplete="off">
-    <button id="btnConnect" class="btn btn-phantom">Connect Phantom</button>
-    <button id="btnGuest" class="btn btn-ghost">Play as guest</button>
+    <input id="userWallet" class="login-input" type="text" maxlength="48" placeholder="Your Solana wallet address" autocomplete="off">
+    <button id="btnGuest" class="btn btn-phantom">Play</button>
     <p class="login-note">Powered by <b>$CELESTIA</b> on Solana</p>
   </div>
 </div>
@@ -28,7 +27,7 @@
 <!-- ── TOP-LEFT controls ───────────────────────────────── -->
 <div id="topLeft" class="hud hidden">
   <div style="display:flex;gap:8px;">
-    <button id="btnBuyTerritory" class="pill pill-gold"><img class="bicon" data-ic="coin"> Buy Territory</button>
+    <button id="btnBuyTerritory" class="pill pill-gold locked" title="Locked for now"><img class="bicon" data-ic="coin"> Buy Territory 🔒</button>
     <button id="btnHome" class="pill pill-home"><img class="bicon" data-ic="home"> HOME</button>
     <button id="btnChat" class="pill" title="Toggle chat">💬 CHAT</button>
   </div>
@@ -58,7 +57,7 @@
   <button class="tool" data-panel="inventory"><img class="ticon" data-ic="inventory"><span>Inventory</span></button>
   <button class="tool" data-panel="bank"><img class="ticon" data-ic="bank"><span>Bank</span></button>
   <button class="tool" data-panel="alchemist"><img class="ticon" data-ic="alchemist"><span>Alchemist</span></button>
-  <button class="tool" data-panel="marketplace"><img class="ticon" data-ic="market"><span>Marketplace</span></button>
+  <button class="tool locked" data-panel="marketplace"><img class="ticon" data-ic="market"><span>Marketplace 🔒</span></button>
   <button class="tool" data-panel="army"><img class="ticon" data-ic="army"><span>Army</span></button>
   <button class="tool" data-panel="shipyard"><img class="ticon" data-ic="ship"><span>Shipyard</span></button>
   <button class="tool" data-panel="colonise"><img class="ticon" data-ic="planet"><span>Colonise</span></button>

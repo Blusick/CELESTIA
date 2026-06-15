@@ -417,8 +417,10 @@ function weaponMul() { return G.equip?.weapon === 'goldsword' ? 2.8 : G.equip?.w
 // compact view of equipped gear (creature src per slot + weapon kind) shown on the body & sent to others
 function gearVis() { const e = G.equip || {}, g = {}; for (const s of ['top', 'bottom', 'shoes', 'shield']) g[s] = (e[s] && typeof e[s] === 'object') ? e[s].src : null; g.weapon = (typeof e.weapon === 'string') ? e.weapon : null; return g; }
 function addXP(n) {
+  if (G.level >= 50) { G.xp = 0; refreshHUD(); return; }              // level cap 50
   G.xp += n;
-  while (G.xp >= G.xpNeed) { G.xp -= G.xpNeed; G.level++; G.statPoints += 5; applyStats(); G.hp = G.maxHp; G.xpNeed = xpForLevel(G.level); sfx('level'); spawnFloater('LEVEL UP! +5 pts', G.me.x, G.me.y - 28, '#5fd16a'); }
+  while (G.xp >= G.xpNeed && G.level < 50) { G.xp -= G.xpNeed; G.level++; G.statPoints += 5; applyStats(); G.hp = G.maxHp; G.xpNeed = xpForLevel(G.level); sfx('level'); spawnFloater('LEVEL UP! +5 pts', G.me.x, G.me.y - 28, '#5fd16a'); }
+  if (G.level >= 50) G.xp = 0;
   refreshHUD();
 }
 
@@ -1393,18 +1395,11 @@ document.getElementById('btnGuest').onclick = async () => {
   const w = chosenWallet();
   if (!isSolAddr(w)) return toast('Enter a valid Solana wallet address to play as guest.');
   G.chosenName = chosenUsername();
-  wallet.pubkey = w;                        // guests are identified by their entered wallet (no signing)
+  wallet.pubkey = w;                        // players are identified by their entered wallet (no on-chain signing yet)
   G.guest = true; startGame(true);
 };
-document.getElementById('btnConnect').onclick = async () => {
-  if (!chosenUsername()) return toast('Please choose a username first.');
-  if (!hasPhantom()) { toast('Install Phantom wallet first.'); window.open('https://phantom.app/', '_blank'); return; }
-  G.chosenName = chosenUsername();
-  try { await loadConfig(); await walletConnect(); G.guest = false; startGame(false); }
-  catch (e) { toast('Connection failed: ' + (e.message || e)); }
-};
 document.getElementById('btnChat').onclick = () => document.getElementById('chat').classList.toggle('hidden');
-document.getElementById('btnBuyTerritory').onclick = enterBuyMode;
+document.getElementById('btnBuyTerritory').onclick = () => toast('🔒 Buy Territory is locked for now.');
 document.getElementById('btnHome').onclick = () => { if (G.me) { camMode = 'follow'; setZoom(2); updateCamera(); exitModes(); openPanel(null); } };
 document.getElementById('btnSound').onclick = () => {
   G.soundOn = !G.soundOn;

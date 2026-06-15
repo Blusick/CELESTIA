@@ -1,0 +1,12 @@
+bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)
+[world] save file → /sessions/beautiful-zealous-galileo/mnt/Skyland/data/world.json
+[world] loaded 0 tiles, 2 listings, 4 profiles, 0 banned
+[world] spawned 75 creatures
+
+  🛸  CELESTIA running → http://localhost:3000
+      $CELESTIA mint:  8fa3FLWEk4Y7XLAGsQT8tpA8EcfsfQ9ZgEQVYcAvpump
+      treasury:   DwDoTqae91mTDMskLJgvjwiXz8rsTADdTAxH9YeA4Niq
+      cluster:    mainnet-beta
+
+[ban] LevelJump (W_LevelJump) — level jump 1→4
+[ban] WoodFlood (W_WoodFlood) — gathered 5000 wood in 0.3s

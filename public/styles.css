@@ -145,6 +145,7 @@ input[type=text],input[type=number],select{font-family:inherit;font-size:9px;pad
 
 .slot.equippable{cursor:grab;border-color:#caa84a;}
 .slot.consumable{cursor:pointer;border-color:#c47a4a;}
+.locked{opacity:.5;filter:grayscale(.75);}
 .slot.equippable:hover{border-color:var(--gold);}
 
 /* equipment slots (paper-doll) */
