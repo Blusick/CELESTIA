@@ -1217,7 +1217,11 @@ function startMusic() {
   if (!bgm) return;
   bgm.volume = 0.5; bgm.loop = true;
   bgm.addEventListener('ended', () => { bgm.currentTime = 0; bgm.play().catch(() => {}); }); // safety re-loop
-  if (G.soundOn) bgm.play().catch(() => {});
+  const tryPlay = () => { if (G.soundOn) bgm.play().catch(() => {}); };
+  tryPlay();
+  // browsers block autoplay without a user gesture (e.g. right after a refresh) → resume on first interaction
+  const resume = () => { tryPlay(); if (!bgm.paused) { removeEventListener('pointerdown', resume); removeEventListener('keydown', resume); } };
+  addEventListener('pointerdown', resume); addEventListener('keydown', resume);
 }
 
 // ── toast ───────────────────────────────────────────────────
@@ -1410,6 +1414,7 @@ G.actions = {
 function chosenUsername() { return (document.getElementById('userName')?.value || '').trim().slice(0, 16); }
 function chosenWallet() { return (document.getElementById('userWallet')?.value || '').trim(); }
 const isSolAddr = a => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+try { if (localStorage.getItem('lunaris_sound') === '0') { G.soundOn = false; const b = document.getElementById('btnSound'); if (b) { b.style.filter = 'grayscale(1) brightness(.7)'; b.title = 'Sound off'; } } } catch {}
 const SAVED_KEY = 'lunaris_profile';
 function loginWith(name, w) {
   G.chosenName = name;
@@ -1439,6 +1444,7 @@ document.getElementById('btnBuyTerritory').onclick = () => toast('🔒 Buy Terri
 document.getElementById('btnHome').onclick = () => { if (G.me) { camMode = 'follow'; setZoom(2); updateCamera(); exitModes(); openPanel(null); } };
 document.getElementById('btnSound').onclick = () => {
   G.soundOn = !G.soundOn;
+  try { localStorage.setItem('lunaris_sound', G.soundOn ? '1' : '0'); } catch {}   // remember across refreshes
   const b = document.getElementById('btnSound'); b.style.filter = G.soundOn ? '' : 'grayscale(1) brightness(.7)'; b.title = G.soundOn ? 'Sound on' : 'Sound off';
   const bgm = document.getElementById('bgm'); if (bgm) { if (G.soundOn) bgm.play().catch(() => {}); else bgm.pause(); }
 };
@@ -1477,13 +1483,13 @@ function initLoginBg() {
     const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
     return Math.abs((nx - ax) * dy - (ny - ay) * dx) / L;
   }
-  let stars = [], clouds = [], mountains = [];
+  let stars = [], clouds = [];
   function build() {
     seed = 0x9e3779b1;
-    // stars — denser and brighter close to the Milky Way band
+    // stars — fill the whole sky, denser and brighter close to the Milky Way band
     stars = [];
-    for (let i = 0; i < 520; i++) {
-      const nx = srnd(), ny = srnd() * 0.86;                    // keep stars above the ground line
+    for (let i = 0; i < 560; i++) {
+      const nx = srnd(), ny = srnd();
       const near = Math.max(0, 1 - bandDist(nx, ny) / 0.16);
       if (srnd() > 0.35 + near * 0.6) continue;                 // thin out away from the band
       stars.push({ x: nx, y: ny, z: srnd(), p: srnd() * 6.28, warm: srnd() < 0.12, big: srnd() < 0.05 });
@@ -1493,13 +1499,6 @@ function initLoginBg() {
     for (let i = 0; i <= 14; i++) {
       const f = i / 14, nx = 0.30 + (0.78 - 0.30) * f + (srnd() - 0.5) * 0.06, ny = 0.10 + (0.92 - 0.10) * f + (srnd() - 0.5) * 0.06;
       clouds.push({ x: nx, y: ny, r: rnd(0.10, 0.20), hue: srnd() < 0.5 ? 'b' : 'p', a: rnd(0.05, 0.12) });
-    }
-    // two layered mountain silhouettes on the horizon
-    mountains = [];
-    for (const layer of [{ base: 0.86, amp: 0.07, col: '#070c18', step: 0.10 }, { base: 0.90, amp: 0.05, col: '#04070f', step: 0.07 }]) {
-      const pts = [];
-      for (let x = -0.05; x <= 1.05; x += layer.step) pts.push({ x, y: layer.base - Math.abs(srnd() - 0.3) * layer.amp });
-      mountains.push({ pts, col: layer.col });
     }
   }
   const resize = () => { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; c.setTransform(dpr, 0, 0, dpr, 0, 0); build(); };
@@ -1516,21 +1515,18 @@ function initLoginBg() {
     shooters.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max: rnd(0.9, 1.5), len: rnd(120, 230) });
   }
 
+  // hero: runs left→right, then takes off in the tier-4 ship, then loops
+  const hero = { mode: 'run', x: -80, y: 0, t: 0 };
   const t0 = performance.now(); let last = t0;
   function frame(now) {
     const login = document.getElementById('login');
     if (!login || login.classList.contains('hidden')) return;     // stop once the game starts
     const t = (now - t0) / 1000, dt = Math.min(0.05, (now - last) / 1000); last = now;
-    const hY = H * 0.80;                                           // horizon / ground line
 
-    // ── sky ──
-    const sky = c.createLinearGradient(0, 0, 0, hY);
-    sky.addColorStop(0, '#060a16'); sky.addColorStop(0.55, '#070d1c'); sky.addColorStop(1, '#0a1428');
-    c.fillStyle = sky; c.fillRect(0, 0, W, hY);
-    // soft blue horizon glow behind the hero
-    const glow = c.createRadialGradient(W * 0.5, hY, 0, W * 0.5, hY, H * 0.55);
-    glow.addColorStop(0, 'rgba(40,80,150,.28)'); glow.addColorStop(1, 'rgba(40,80,150,0)');
-    c.fillStyle = glow; c.fillRect(0, 0, W, hY);
+    // ── sky (full height — just the starry night, no ground) ──
+    const sky = c.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#050912'); sky.addColorStop(0.5, '#070d1c'); sky.addColorStop(1, '#060b18');
+    c.fillStyle = sky; c.fillRect(0, 0, W, H);
 
     // ── Milky Way nebula clouds ──
     for (const cl of clouds) {
@@ -1554,7 +1550,7 @@ function initLoginBg() {
     if (t > nextShot) { spawnShot(); if (Math.random() < 0.3) spawnShot(); nextShot = t + rnd(0.7, 2.0); }
     for (let i = shooters.length - 1; i >= 0; i--) {
       const sh = shooters[i]; sh.life += dt; sh.x += sh.vx * dt; sh.y += sh.vy * dt;
-      const k = sh.life / sh.max; if (k >= 1 || sh.y > hY) { shooters.splice(i, 1); continue; }
+      const k = sh.life / sh.max; if (k >= 1 || sh.y > H * 0.95) { shooters.splice(i, 1); continue; }
       const fade = k < 0.15 ? k / 0.15 : (1 - k);                  // ease in then out
       const ux = sh.vx / Math.hypot(sh.vx, sh.vy), uy = sh.vy / Math.hypot(sh.vx, sh.vy);
       const tx = sh.x - ux * sh.len, ty = sh.y - uy * sh.len;
@@ -1565,29 +1561,21 @@ function initLoginBg() {
       c.fillStyle = `rgba(200,225,255,${0.3 * fade})`; c.beginPath(); c.arc(sh.x, sh.y, 5, 0, 7); c.fill();
     }
 
-    // ── mountains ──
-    for (const m of mountains) {
-      c.fillStyle = m.col; c.beginPath(); c.moveTo(-10, H);
-      for (const p of m.pts) c.lineTo(p.x * W, p.y * H);
-      c.lineTo(W + 10, H); c.closePath(); c.fill();
-    }
-    // ── ground (cracked stone) ──
-    c.fillStyle = '#05080f'; c.fillRect(0, hY - 1, W, H - hY + 1);
-    c.strokeStyle = 'rgba(90,140,210,.22)'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, hY); c.lineTo(W, hY); c.stroke();  // rim light on the ridge
-    c.strokeStyle = 'rgba(120,150,190,.06)'; c.lineWidth = 1;
-    for (let i = 0; i < 26; i++) {                                  // faint slab cracks
-      const gx = ((i * 137.5) % 100) / 100 * W, gy = hY + ((i * 53) % 100) / 100 * (H - hY);
-      c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx + 26, gy + 6); c.stroke();
-    }
-    // grass tuft (bottom-right, like the reference)
-    c.strokeStyle = 'rgba(70,110,70,.8)'; c.lineWidth = 1.5;
-    for (let i = 0; i < 6; i++) { const gx = W * 0.86 + i * 4; c.beginPath(); c.moveTo(gx, H - 6); c.quadraticCurveTo(gx + 3, H - 22, gx + 7, H - 30); c.stroke(); }
-
-    // ── hero: the exact in-game player sprite (back view), scaled up on the ridge ──
-    const scale = Math.min(H * 0.30, 300) / 34;                    // sprite ≈ 34px tall incl. shadow
+    // ── hero: run across, then blast off in the tier-4 ship, then loop ──
+    const base = H * 0.80;                                         // invisible run line
+    const runSpeed = Math.max(170, W * 0.24);
+    if (hero.mode === 'run') {
+      hero.y = base; hero.x += runSpeed * dt;
+      if (hero.x >= W * 0.66) hero.mode = 'fly';
+    } else if (hero.mode === 'fly') {
+      hero.x += runSpeed * 1.25 * dt; hero.y -= Math.max(240, H * 0.45) * dt;
+      if (hero.y < -H * 0.25 || hero.x > W * 1.25) { hero.mode = 'wait'; hero.t = t; }
+    } else if (t - hero.t > 1.3) { hero.mode = 'run'; hero.x = -80; hero.y = base; }
+    const scale = Math.min(H * 0.26, 230) / 34;                    // sprite ≈ 34px tall incl. shadow
     c.save();
-    c.translate(W * 0.5, hY); c.scale(scale, scale);
-    S.drawPlayer(c, 0, -16, G.appearance, 'up', t * 1.6, false, null, null);   // feet (y+16) land on the ridge
+    c.translate(hero.x, hero.y); c.scale(scale, scale);
+    if (hero.mode === 'fly') S.drawPlayer(c, 0, -16, G.appearance, 'right', t * 10, true, 'dread', null);   // tier-4 ship takeoff
+    else S.drawPlayer(c, 0, -16, G.appearance, 'right', t * 10, false, null, null);                          // running right
     c.restore();
 
     requestAnimationFrame(frame);

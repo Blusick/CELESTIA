@@ -63,9 +63,9 @@ button{font-family:inherit;cursor:pointer;}
 .field input{position:absolute;inset:1.6px;width:calc(100% - 3.2px);height:calc(100% - 3.2px);
   clip-path:polygon(0 32%,8% 0,92% 0,100% 32%,100% 68%,92% 100%,8% 100%,0 68%);
   background:linear-gradient(180deg,rgba(10,20,42,.82),rgba(8,16,34,.9));border:none;outline:none;
-  color:#dcebff;font-family:inherit;font-size:clamp(11px,1.5vw,14px);letter-spacing:3px;text-align:center;
+  color:#dcebff;font-family:inherit;font-size:clamp(15px,2.1vw,20px);letter-spacing:3px;text-align:center;
   text-transform:uppercase;}
-.field input::placeholder{color:rgba(150,185,235,.75);letter-spacing:3px;}
+.field input::placeholder{color:rgba(160,195,240,.8);letter-spacing:3px;}
 .field:focus-within{background:linear-gradient(180deg,rgba(170,210,255,.85),rgba(110,165,240,.6));
   filter:drop-shadow(0 0 12px rgba(130,185,255,.6));}
 .enter-btn{width:min(300px,72vw);height:clamp(46px,7vh,56px);margin-top:clamp(6px,1.4vh,14px);
