@@ -38,6 +38,20 @@ app.get('/admin/players', (req, res) => {
   res.send(`<!doctype html><meta charset="utf-8"><title>LUNARIS players</title><style>body{font-family:system-ui;background:#0b1020;color:#e8eefc;padding:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #243056}code{color:#9fd0ff}tr.ban{color:#ff8a8a}</style><h1>Registered players — ${rows.length} total · ${onlineWallets.size} online</h1><table><tr><th></th><th>Name</th><th>Lvl</th><th>Wallet</th><th></th><th>Last seen (UTC)</th></tr>${trs}</table>`);
 });
 
+// ── admin: FULL WIPE — reset every player to zero (protected + explicit confirm) ──
+app.get('/admin/wipe', (req, res) => {
+  const key = process.env.ADMIN_KEY;
+  if (!key || req.query.key !== key) return res.status(403).send('Forbidden');
+  if (req.query.confirm !== 'yes') return res.send('Append &confirm=yes to wipe. This permanently deletes ALL player profiles. Add &all=yes to also clear owned tiles, market listings and bans.');
+  const n = Object.keys(W.state.profiles || {}).length;
+  W.state.profiles = {};                                  // every player restarts at level 1, empty inventory/bank
+  if (req.query.all === 'yes') { W.state.tiles = {}; W.state.market = []; W.state.banned = []; }
+  W.saveState();
+  for (const ws of wss.clients) { try { send(ws, { type: 'kicked', reason: 'The world has been reset. Please reload.' }); ws.close(); } catch {} }   // drop everyone so they re-register fresh
+  console.log(`[admin] FULL WIPE — cleared ${n} profiles${req.query.all === 'yes' ? ' + tiles/market/bans' : ''}`);
+  res.send(`Wiped ${n} player profile(s).${req.query.all === 'yes' ? ' Cleared tiles, market and bans too.' : ''} Everyone has been disconnected — players must reload to start fresh.`);
+});
+
 // Solana RPC proxy — the public mainnet RPC blocks browser CORS (403),
 // so the client routes JSON-RPC through the server instead.
 app.post('/api/rpc', async (req, res) => {
