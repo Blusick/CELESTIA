@@ -9,7 +9,7 @@ export const G = {
   nodes: [],                 // farmable resource nodes (client-deterministic)
   market: [],
 
-  inv: { iron: 0, meat: 0, wood: 0, plank: 0, ingot: 0, sword: 0, gold: 0, goldingot: 0, goldsword: 0, cookedmeat: 0, gear: [], items: [] },
+  inv: { iron: 0, meat: 0, wood: 0, plank: 0, ingot: 0, sword: 0, gold: 0, goldingot: 0, goldsword: 0, diamond: 0, diamondsword: 0, cookedmeat: 0, gear: [], items: [] },
   equip: { top: null, bottom: null, weapon: null, shield: null, shoes: null },   // weapon = kind string; armour slots = gear object
   invMax: 300,
   bank: { iron: 0, meat: 0, wood: 0, plank: 0, ingot: 0 },

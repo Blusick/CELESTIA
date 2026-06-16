@@ -421,12 +421,13 @@ setInterval(() => {
         if (tgt.hp <= 0 && wsOf) send(wsOf, { type: 'died' });
       }
     } else {
-      // wander, leashed to home
+      // wander (roamers move faster & range wider, even when no player is near)
+      const wsp = c.roam ? c.speed * 0.6 : 0.5, leash = c.roam ? 150 : 90, hold = c.roam ? 350 : 600;
       c.wanderT -= TICK;
-      if (c.wanderT <= 0) { c.wanderT = 600 + Math.random() * 1200; const a = Math.random() * Math.PI * 2; c.vx = Math.cos(a) * 0.5; c.vy = Math.sin(a) * 0.5; }
+      if (c.wanderT <= 0) { c.wanderT = hold + Math.random() * 1000; const a = Math.random() * Math.PI * 2; c.vx = Math.cos(a) * wsp; c.vy = Math.sin(a) * wsp; }
       c.x += c.vx; c.y += c.vy;
       const dx = c.x - c.homeX, dy = c.y - c.homeY;
-      if (Math.hypot(dx, dy) > 90) { c.x -= c.vx * 2; c.y -= c.vy * 2; c.wanderT = 0; }
+      if (Math.hypot(dx, dy) > leash) { c.x -= c.vx * 2; c.y -= c.vy * 2; c.wanderT = 0; }
     }
     // keep inside leash bounds always
     c.x = clamp(c.x, b.x0, b.x1); c.y = clamp(c.y, b.y0, b.y1);

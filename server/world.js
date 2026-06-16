@@ -173,13 +173,10 @@ register({
   },
 });
 register({
-  id: 'explore', name: 'Exploration Zone', resources: 'Artifacts · Data · Ancient Maps', color: '#b06bff',
-  type: 'locked', biome: 'explore', level: 6, locked: true, x: 140, y: 137, w: 24, h: 20, base: 'd', rough: 0.3,
+  id: 'explore', name: 'Exploration Zone', resources: 'Diamonds · Artifacts · Data', color: '#b06bff',
+  type: 'creature', biome: 'explore', level: 6, x: 140, y: 137, w: 24, h: 20, base: 'd', rough: 0.3,
   build(cells, features, rand) {
-    features.push({ t: 'obelisk', tx: cells[0].length * 0.5 | 0, ty: cells.length * 0.45 | 0 });
-    scatter(cells, features, 'ruin', 5, ['d'], rand);
-    scatter(cells, features, 'obelisk', 2, ['d'], rand);
-    scatter(cells, features, 'rock', 5, ['d'], rand);
+    // bare terrain — only the diamond mines (client-placed) live here
   },
 });
 
@@ -346,19 +343,26 @@ export const CREATURE_RESPAWN_MS = 20000;
 const KINDS = {
   mining:  { kind: 'gargoyle', hp: 45,  dmg: 7,  speed: 1.1, xp: 16, color: '#9aa0b0' },
   hostile: { kind: 'alien',    hp: 120, dmg: 17, speed: 1.5, xp: 55, color: '#b06bff' },
+  explore: { kind: 'zombie',   hp: 600, dmg: 51, speed: 6, xp: 80, color: '#5fbf3a' },   // 5× alien HP, 3× alien dmg, faster than players (20Hz × 6 ≈ 120 px/s)
   build:   { kind: 'gargoyle', hp: 60,  dmg: 9,  speed: 1.1, xp: 24, color: '#c79a5a' },
   sheep:   { kind: 'sheep',    hp: 30,  dmg: 4,  speed: 1.0, xp: 10, color: '#eef0f2', passive: true },
 };
 export function spawnCreatures() {
   // Hostile Zone: TWICE as many aliens, 2× speed, 2× damage, 2× aggro range (no sheep here)
   const hostile = islandById('hostile');
+  const alienCount = hostile ? Math.max(3, Math.round((hostile.w * hostile.h) / 80)) * 2 : 16;
   if (hostile) {
-    const count = Math.max(3, Math.round((hostile.w * hostile.h) / 80)) * 2;
-    const buffed = { ...KINDS.hostile, speed: KINDS.hostile.speed * 2, dmg: KINDS.hostile.dmg * 2, aggro: 6 };
-    for (let i = 0; i < count; i++) spawnOne(hostile, buffed, hostile.level, 20000);
+    const buffed = { ...KINDS.hostile, speed: KINDS.hostile.speed * 2, dmg: KINDS.hostile.dmg * 2, aggro: 6, roam: true };
+    for (let i = 0; i < alienCount; i++) spawnOne(hostile, buffed, hostile.level, 20000);
+  }
+  // Exploration Zone: as many green zombies as there are aliens — fast roamers, aggressive
+  const explore = islandById('explore');
+  if (explore) {
+    const z = { ...KINDS.explore, aggro: 7, roam: true };
+    for (let i = 0; i < alienCount; i++) spawnOne(explore, z, explore.level, 20000);
   }
   // 4 skeletons (gargoyles) on each big Mining & Construction island
-  for (const zid of ['mining', 'build']) { const isl = islandById(zid); if (isl) for (let i = 0; i < 4; i++) spawnOne(isl, KINDS[zid], isl.level || 2, 20000); }
+  for (const zid of ['mining', 'build']) { const isl = islandById(zid); if (isl) for (let i = 0; i < 4; i++) spawnOne(isl, { ...KINDS[zid], roam: true }, isl.level || 2, 20000); }
   // Agricultural Zone (main island): a flock of passive sheep in random spots
   const agri = islandById('agri');
   if (agri) for (let i = 0; i < 6; i++) spawnOne(agri, KINDS.sheep, 1, 20000);

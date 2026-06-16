@@ -49,7 +49,7 @@ WIRE.guardian = (m) => { const b = m.querySelector('#enterArenaBtn'); if (b) b.o
 const WORKSHOPS = {
   lumberjack: { name: 'Lumberjack Workshop', npc: 'Timber Tom', recipes: [{ output: 'plank', cost: { wood: 5 }, ms: 10000 }] },
   miner: { name: 'Miner Workshop', npc: 'Rocky Pete', recipes: [{ output: 'ingot', cost: { iron: 5 }, ms: 10000 }, { output: 'goldingot', cost: { gold: 5 }, ms: 12000 }] },
-  builder: { name: 'Builder Workshop', npc: 'Forge Fred', recipes: [{ output: 'sword', cost: { ingot: 5, plank: 5 }, ms: 30000 }, { output: 'goldsword', cost: { goldingot: 5, plank: 5 }, ms: 40000 }] },
+  builder: { name: 'Builder Workshop', npc: 'Forge Fred', recipes: [{ output: 'sword', cost: { ingot: 5, plank: 5 }, ms: 30000 }, { output: 'goldsword', cost: { goldingot: 5, plank: 5 }, ms: 40000 }, { output: 'diamondsword', cost: { diamond: 5, ingot: 5 }, ms: 50000 }] },
 };
 function workshopPanel(id) {
   const w = WORKSHOPS[id];
@@ -118,6 +118,8 @@ const ITEM_ICON = {
   goldingot: c => { c.fillStyle = '#e0b542'; c.beginPath(); c.moveTo(5, 16); c.lineTo(20, 16); c.lineTo(17, 9); c.lineTo(8, 9); c.closePath(); c.fill(); c.fillStyle = '#fff3b0'; c.fillRect(9, 10, 7, 2); },
   goldsword: c => { c.strokeStyle = '#ffd34d'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(6, 18); c.lineTo(18, 5); c.stroke(); c.strokeStyle = '#7a5a10'; c.lineWidth = 2; c.beginPath(); c.moveTo(4, 20); c.lineTo(9, 15); c.stroke(); c.fillStyle = '#fff3b0'; c.beginPath(); c.arc(4, 20, 1.6, 0, 7); c.fill(); },
   cookedmeat: c => { c.fillStyle = '#9a5a32'; c.beginPath(); c.ellipse(11, 11, 7, 5.5, 0, 0, 7); c.fill(); c.fillStyle = '#7a3f22'; c.beginPath(); c.ellipse(11, 12.5, 6, 3.5, 0, 0, 7); c.fill(); c.strokeStyle = '#f0e6d0'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(15, 13); c.lineTo(20, 16); c.stroke(); c.fillStyle = '#ffcaa0'; c.fillRect(6, 8, 3, 2); },
+  diamond: c => { c.fillStyle = '#7fe6ff'; c.beginPath(); c.moveTo(11, 4); c.lineTo(19, 10); c.lineTo(11, 19); c.lineTo(3, 10); c.closePath(); c.fill(); c.fillStyle = '#cdf6ff'; c.beginPath(); c.moveTo(11, 4); c.lineTo(15, 10); c.lineTo(11, 11); c.lineTo(7, 10); c.closePath(); c.fill(); c.strokeStyle = '#3aa8c8'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(3, 10); c.lineTo(19, 10); c.stroke(); },
+  diamondsword: c => { c.strokeStyle = '#8fe9ff'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(6, 18); c.lineTo(18, 5); c.stroke(); c.strokeStyle = '#1f6b86'; c.lineWidth = 2; c.beginPath(); c.moveTo(4, 20); c.lineTo(9, 15); c.stroke(); c.fillStyle = '#e6fbff'; c.beginPath(); c.arc(4, 20, 1.6, 0, 7); c.fill(); },
 };
 function itemIcon(kind) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 22; const c = cv.getContext('2d');
@@ -125,7 +127,7 @@ function itemIcon(kind) {
 }
 // equip slots + which item kinds go where; armour slots hold a gear object, weapon holds a kind string
 const EQUIP_SLOTS = [['top', 'Top'], ['bottom', 'Bottom'], ['weapon', 'Weapon'], ['shield', 'Shield'], ['shoes', 'Shoes']];
-const EQUIP_OF = { sword: 'weapon', goldsword: 'weapon' };
+const EQUIP_OF = { sword: 'weapon', goldsword: 'weapon', diamondsword: 'weapon' };
 // creature-themed gear icons (faithful palettes per source creature)
 const GEAR_PAL = { sheep: { m: '#f3f4f6', d: '#cfd3d8', a: '#6b6f78' }, skeleton: { m: '#e6e9ef', d: '#aab0bd', a: '#3a3f48' }, alien: { m: '#b06bff', d: '#7e3fd0', a: '#c9ff6a' } };
 function drawGearIcon(c, slot, src) {
@@ -150,7 +152,7 @@ function eqSlotHTML([key, label]) {
   return `<div class="slot eqslot${v ? ' filled' : ''}${key === 'shoes' ? ' eqslot-wide' : ''}" data-eslot="${key}"${v ? ' draggable="true"' : ''} title="${title}"><span class="eqlab">${label}</span>${inner}</div>`;
 }
 PANELS.inventory = () => {
-  const resAll = [['iron', G.inv.iron], ['meat', G.inv.meat], ['wood', G.inv.wood], ['plank', G.inv.plank], ['ingot', G.inv.ingot], ['gold', G.inv.gold], ['goldingot', G.inv.goldingot], ['cookedmeat', G.inv.cookedmeat], ['sword', G.inv.sword], ['goldsword', G.inv.goldsword]];
+  const resAll = [['iron', G.inv.iron], ['meat', G.inv.meat], ['wood', G.inv.wood], ['plank', G.inv.plank], ['ingot', G.inv.ingot], ['gold', G.inv.gold], ['goldingot', G.inv.goldingot], ['diamond', G.inv.diamond], ['cookedmeat', G.inv.cookedmeat], ['sword', G.inv.sword], ['goldsword', G.inv.goldsword], ['diamondsword', G.inv.diamondsword]];
   const res = resAll.filter(([k, v]) => (v || 0) >= 1);                 // only owned resources
   const used = G.actions.invCount();
   const slots = res.map(([k, v]) => {
@@ -353,7 +355,7 @@ PANELS.colonise = () => nearNpc('colonise') ? planetsPanel() : locatorPanel('col
 WIRE.colonise = (m) => { if (!nearNpc('colonise')) wireLocator(m); };
 
 // ── BANK (Banker James) — store up to 1000 items ────────────
-const BANK_RES = ['iron', 'meat', 'wood', 'plank', 'ingot', 'gold', 'goldingot'];
+const BANK_RES = ['iron', 'meat', 'wood', 'plank', 'ingot', 'gold', 'goldingot', 'diamond'];
 function bankCount() { return BANK_RES.reduce((a, k) => a + (G.bank[k] || 0), 0); }
 function bankPanel() {
   const b = G.bank, used = bankCount();

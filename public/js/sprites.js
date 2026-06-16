@@ -283,6 +283,15 @@ export function drawNode(ctx, x, y, kind, t = 0) {
     r(ctx, x - 10, y - 7, 20, 14, '#5b6270'); r(ctx, x - 7, y - 5, 14, 9, '#6c7484');
     r(ctx, x - 5, y - 3, 4, 3, '#ffd34d'); r(ctx, x + 3, y + 1, 3, 3, '#ffe89a'); r(ctx, x - 2, y + 3, 3, 2, '#f0c33a');
     if ((t * 2 | 0) % 3 === 0) r(ctx, x + 3, y + 1, 2, 2, '#fff7d0');
+  } else if (kind === 'diamond') { // dark rock studded with bright cyan diamonds
+    r(ctx, x - 11, y + 3, 22, 6, 'rgba(0,0,0,.2)');
+    rr(ctx, x - 12, y - 9, 24, 18, 3, '#0c0c0c');                                  // black border
+    r(ctx, x - 10, y - 7, 20, 14, '#3a4452'); r(ctx, x - 7, y - 5, 14, 9, '#4a5666');
+    for (const [dx, dy, s] of [[-4, -2, 3], [4, 1, 2.4], [-1, 3, 2]]) {            // faceted gems
+      ctx.fillStyle = '#7fe6ff'; ctx.beginPath(); ctx.moveTo(x + dx, y + dy - s); ctx.lineTo(x + dx + s, y + dy); ctx.lineTo(x + dx, y + dy + s); ctx.lineTo(x + dx - s, y + dy); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#cdf6ff'; ctx.beginPath(); ctx.moveTo(x + dx, y + dy - s); ctx.lineTo(x + dx + s * 0.5, y + dy - s * 0.2); ctx.lineTo(x + dx, y + dy); ctx.closePath(); ctx.fill();
+    }
+    if ((t * 2 | 0) % 3 === 0) r(ctx, x - 4, y - 3, 1.4, 1.4, '#fff');
   } else if (kind === 'meat') { // grazing sky-critter
     r(ctx, x - 9, y + 4, 18, 4, 'rgba(0,0,0,.18)');
     r(ctx, x - 8, y - 6, 16, 11, '#d9b08c'); r(ctx, x + 6, y - 9, 6, 6, '#c89a72');
@@ -674,7 +683,7 @@ function armorOverlay(ctx, x, y, gear, sw) {
     ctx.fillStyle = p.m; ctx.beginPath(); ctx.moveTo(sx, sy - 3.5); ctx.lineTo(sx + 2.6, sy - 2.4); ctx.lineTo(sx + 2, sy + 3); ctx.lineTo(sx, sy + 4.6); ctx.lineTo(sx - 2, sy + 3); ctx.lineTo(sx - 2.6, sy - 2.4); ctx.closePath(); ctx.fill();
     ctx.fillStyle = p.e; r(ctx, sx - 0.8, sy - 2, 1.6, 5, p.e); r(ctx, sx - 2.2, sy - 0.3, 4.4, 1.6, p.e); }
   // sword sheathed on the back
-  if (gear.weapon) { const gold = gear.weapon === 'goldsword', blade = gold ? '#ffd34d' : '#d6dae0', grip = gold ? '#7a5a10' : '#7e1d24';
+  if (gear.weapon) { const gold = gear.weapon === 'goldsword', dia = gear.weapon === 'diamondsword', blade = dia ? '#8fe9ff' : gold ? '#ffd34d' : '#d6dae0', grip = dia ? '#1f6b86' : gold ? '#7a5a10' : '#7e1d24';
     ctx.strokeStyle = blade; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x + 5, y - 2); ctx.lineTo(x + 11, y - 12); ctx.stroke();
     ctx.strokeStyle = grip; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 4, y); ctx.lineTo(x + 7, y - 4); ctx.stroke(); }
 }
@@ -935,6 +944,7 @@ export function drawCreature(ctx, x, y, c, frame) {
   ell(ctx, x, y + 8, 8, 2.6, 'rgba(0,0,0,.22)');
   ctx.translate(0, bob);
   if (c.kind === 'alien') drawAlien(ctx, x, y, c.color || '#b06bff');
+  else if (c.kind === 'zombie') drawZombie(ctx, x, y, c.color || '#5fbf3a', frame);
   else if (c.kind === 'sporeling') drawSporeling(ctx, x, y, c.color || '#74c365');
   else if (c.kind === 'sheep') drawSheep(ctx, x, y, !!c.aggressive);
   else drawSkeletonMob(ctx, x, y, c.color || '#9aa0b0');   // gargoyle / default
@@ -980,6 +990,34 @@ function drawAlien(ctx, x, y, col) {
   ell(ctx, x - 2.6, y - 9, 2.2, 2.8, '#0d0a14'); ell(ctx, x + 2.6, y - 9, 2.2, 2.8, '#0d0a14'); // big eyes
   ctx.fillStyle = '#c9ff6a'; ell(ctx, x - 2.6, y - 9.5, 0.9, 1.1); ell(ctx, x + 2.6, y - 9.5, 0.9, 1.1);
   ctx.fillStyle = '#fff'; ell(ctx, x - 2.2, y - 10, 0.4, 0.5); ell(ctx, x + 3, y - 10, 0.4, 0.5);
+}
+function drawZombie(ctx, x, y, col, frame) {
+  const skin = col, sh = shade(col, -36), hi = shade(col, 26), rot = shade(col, -52);
+  const cloth = '#3b3550', clothSh = '#2a2640', OL = '#0c160c';
+  const sway = Math.sin(frame * 0.5) * 1.2, reach = 3 + Math.sin(frame * 0.5) * 1.2;
+  // shuffling legs
+  rr(ctx, x - 4.5, y + 2, 4, 7, 1.6, sh); rr(ctx, x + 0.5, y + 2, 4, 7, 1.6, sh);
+  rr(ctx, x - 5, y + 8, 5, 2.4, 1, '#241c14'); rr(ctx, x + 0.6, y + 8, 5, 2.4, 1, '#241c14');   // tattered boots
+  // outstretched arms reaching forward
+  ctx.strokeStyle = skin; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x - 4, y - 2); ctx.lineTo(x - 4 - reach, y - 1 + sway); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + 4, y - 2); ctx.lineTo(x + 4 + reach, y - 3 - sway); ctx.stroke();
+  ell(ctx, x - 4 - reach, y - 1 + sway, 1.5, 1.5, sh); ell(ctx, x + 4 + reach, y - 3 - sway, 1.5, 1.5, sh);   // claws
+  // torso — tattered shirt over rotting skin
+  rr(ctx, x - 6, y - 4, 12, 9, 3.5, OL);
+  rr(ctx, x - 5, y - 3, 10, 8, 3, vgrad(ctx, y - 3, y + 5, hi, sh));
+  ctx.fillStyle = cloth; ctx.beginPath(); ctx.moveTo(x - 5, y - 3); ctx.lineTo(x + 5, y - 3); ctx.lineTo(x + 4, y + 2); ctx.lineTo(x + 1, y - 0.5); ctx.lineTo(x - 2, y + 2); ctx.lineTo(x - 5, y + 0.5); ctx.closePath(); ctx.fill();   // ragged hem
+  ell(ctx, x + 2, y + 1, 1.4, 1, rot); ell(ctx, x - 3, y + 2, 1.1, 0.8, rot);   // rot patches
+  // head — slumped, big anime eyes glowing
+  ctx.save(); ctx.translate(x + sway * 0.4, 0);
+  ell(ctx, x, y - 9, 6.6, 6, OL); ell(ctx, x, y - 9, 5.6, 5.2, vgrad(ctx, y - 14, y - 4, hi, skin));
+  ell(ctx, x - 2.4, y - 9, 2.1, 2.6, '#0d1a0a'); ell(ctx, x + 2.6, y - 9, 2.1, 2.6, '#0d1a0a');   // eye sockets
+  ctx.fillStyle = '#d9ff4a'; ell(ctx, x - 2.4, y - 9, 1.1, 1.4); ell(ctx, x + 2.6, y - 9, 1.1, 1.4);   // glowing eyes
+  ctx.fillStyle = '#fff'; ell(ctx, x - 2.6, y - 9.6, 0.4, 0.5); ell(ctx, x + 2.4, y - 9.6, 0.4, 0.5);
+  ctx.strokeStyle = '#16310f'; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(x - 2.5, y - 4.6); ctx.lineTo(x + 2.5, y - 4.6); ctx.stroke();   // stitched mouth
+  for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(x + i, y - 5.1); ctx.lineTo(x + i, y - 4.1); ctx.stroke(); }
+  ctx.fillStyle = sh; ell(ctx, x - 3, y - 13, 1.4, 1, sh); ell(ctx, x + 2.5, y - 13.5, 1.1, 0.8, sh);   // mangy tufts
+  ctx.restore();
 }
 function drawSporeling(ctx, x, y, col) {
   const sh = shade(col, -30), hi = shade(col, 28), cap = '#b5543f';

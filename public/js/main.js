@@ -177,7 +177,7 @@ function buildNodes() {
   let seq = 0;
   const KINDS = { mining: ['iron', 'iron', 'iron'], hostile: ['meat'], build: ['iron', 'iron'] };   // no iron in the hostile zone
   for (const isl of G.world.islands) {
-    if (isl.type === 'main' || isl.locked || isl.biome === 'agri') continue;  // agri farms WOOD (trees) only + meat from sheep
+    if (isl.type === 'main' || isl.locked || isl.biome === 'agri' || isl.biome === 'explore') continue;  // agri farms WOOD only; explore gets diamond mines below
     const kinds = KINDS[isl.biome] || ['iron', 'meat'];
     const target = Math.round(isl.w * isl.h / 34);
     let s = (isl.x * 73856093 ^ isl.y * 19349663) >>> 0;
@@ -208,6 +208,25 @@ function buildNodes() {
       if (goldPts.some(p => Math.hypot(p.x - tx, p.y - ty) < 7)) continue;          // spread the gold mines apart
       G.nodes.push({ id: 'n' + seq++, kind: 'gold', tx, ty, x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, hp: 3, dead: false });
       goldPts.push({ x: tx, y: ty }); placed++;
+    }
+  }
+  // 2 diamond mines in the Exploration Zone (farmed like gold)
+  const explore = G.world.islands.find(i => i.biome === 'explore' && i.type !== 'small');
+  if (explore) {
+    let ds = (explore.x * 374761393 ^ explore.y * 668265263) >>> 0, dplaced = 0, dg = 0; const diaPts = [];
+    // keep the mines in the central area of the island (28%–72% band), away from the edges
+    const cx0 = explore.w * 0.28 | 0, cw = Math.max(1, explore.w * 0.44 | 0);
+    const cy0 = explore.h * 0.28 | 0, chh = Math.max(1, explore.h * 0.44 | 0);
+    while (dplaced < 2 && dg++ < 3000) {
+      ds = (ds * 1103515245 + 12345) & 0x7fffffff; const lx = cx0 + ds % cw;
+      ds = (ds * 1103515245 + 12345) & 0x7fffffff; const ly = cy0 + ds % chh;
+      const ch = explore.cells[ly][lx];
+      if (ch === '.' || ch === 'w' || ch === 'p' || ch === 'b' || ch === 'm') continue;
+      const tx = explore.x + lx, ty = explore.y + ly;
+      if (G.nodes.some(n => Math.abs(n.tx - tx) < 1 && Math.abs(n.ty - ty) < 1)) continue;
+      if (diaPts.some(p => Math.hypot(p.x - tx, p.y - ty) < 5)) continue;            // spread the two mines apart
+      G.nodes.push({ id: 'n' + seq++, kind: 'diamond', tx, ty, x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, hp: 4, dead: false });
+      diaPts.push({ x: tx, y: ty }); dplaced++;
     }
   }
   // agricultural trees are farmable for WOOD (replace the decorative tree with a node)
@@ -381,13 +400,13 @@ function harvest(n) {
   if (invCount() >= G.invMax) { if (performance.now() - (n._t || 0) > 1500) toast('Inventory full (300). Sell or bank items.'); n._t = performance.now(); return; }
   n._t = performance.now(); n.hp--;
   const res = n.res || n.kind, amt = n.yield || 1;
-  const tool = res === 'wood' ? 'axe' : (res === 'iron' || res === 'gold') ? 'pickaxe' : 'sword';
+  const tool = res === 'wood' ? 'axe' : (res === 'iron' || res === 'gold' || res === 'diamond') ? 'pickaxe' : 'sword';
   G.inv[res] = (G.inv[res] || 0) + amt; addXP(3); sfx('hit'); startSwing(n.x, n.y, tool);
   spawnFloater('+' + amt + ' ' + res, n.x, n.y, '#fff');
   if (n.hp <= 0) { n.dead = true; n.respawn = performance.now() + 20000; addXP(4); farmTarget = null; }
   refreshHUD(); refreshActivePanel();
 }
-function invCount() { const i = G.inv; return i.iron + i.meat + i.wood + i.plank + i.ingot + i.sword + (i.gold || 0) + (i.goldingot || 0) + (i.goldsword || 0) + (i.cookedmeat || 0) + (i.gear || []).length + (i.items || []).reduce((a, b) => a + (b.qty || 0), 0); }
+function invCount() { const i = G.inv; return i.iron + i.meat + i.wood + i.plank + i.ingot + i.sword + (i.gold || 0) + (i.goldingot || 0) + (i.goldsword || 0) + (i.diamond || 0) + (i.diamondsword || 0) + (i.cookedmeat || 0) + (i.gear || []).length + (i.items || []).reduce((a, b) => a + (b.qty || 0), 0); }
 // creature equipment drops
 const SLOT_NAMES = { top: 'Top', bottom: 'Bottom', shoes: 'Boots', shield: 'Shield' };   // equipment drops are rolled server-side
 let gearSeq = 1;
@@ -414,7 +433,7 @@ function effStat(name) { return (G.stats?.[name] || 0) + gearBonus(SLOT_OF_STAT[
 function applyStats() { G.maxHp = 100 + (G.level - 1) * 5 + effStat('health'); if (G.hp > G.maxHp) G.hp = G.maxHp; }   // +5 HP per level + 1 per Health point
 function strBonus() { return Math.floor(effStat('strength') / 2); }                                      // 2 Strength = +1 dmg
 function speedFactor() { return (100 + Math.floor(effStat('agility') / 2)) / 100; }                      // 2 Agility = +1 move speed (base 100)
-function weaponMul() { return G.equip?.weapon === 'goldsword' ? 2.8 : G.equip?.weapon === 'sword' ? 1.4 : 1; }   // swords −30% power (gold = 2× iron)
+function weaponMul() { return G.equip?.weapon === 'diamondsword' ? 3.6 : G.equip?.weapon === 'goldsword' ? 2.8 : G.equip?.weapon === 'sword' ? 1.4 : 1; }   // diamond strongest
 // compact view of equipped gear (creature src per slot + weapon kind) shown on the body & sent to others
 function gearVis() { const e = G.equip || {}, g = {}; for (const s of ['top', 'bottom', 'shoes', 'shield']) g[s] = (e[s] && typeof e[s] === 'object') ? e[s].src : null; g.weapon = (typeof e.weapon === 'string') ? e.weapon : null; return g; }
 function addXP(n) {
@@ -1289,9 +1308,13 @@ function wireNet() {
   on('creatureDead', m => { const c = G.creatures.get(m.cid); if (c) c.dead = true; });
   on('creatureSpawn', m => G.creatures.set(m.creature.id, m.creature));
   on('kill', m => {
-    const meat = m.kind === 'gargoyle' ? 2 : m.kind === 'sheep' ? 2 : m.kind === 'alien' ? 3 : 1;
+    const meat = m.kind === 'gargoyle' ? 2 : m.kind === 'sheep' ? 2 : m.kind === 'alien' ? 3 : m.kind === 'zombie' ? 3 : 1;
     if (invCount() + meat <= G.invMax) G.inv.meat += meat;
-    addXP(m.xp); spawnFloater('+' + meat + ' meat', G.me.x, G.me.y - 30, '#e0606b');
+    // diminishing XP: low-tier mobs barely give XP past lvl 8; zombies past lvl 30
+    let xp = m.xp;
+    if (['sheep', 'gargoyle', 'alien'].includes(m.kind) && G.level >= 8) xp = Math.max(1, Math.ceil(xp / 5));
+    if (m.kind === 'zombie' && G.level >= 30) xp = Math.max(1, Math.ceil(xp / 5));
+    addXP(xp); spawnFloater('+' + meat + ' meat', G.me.x, G.me.y - 30, '#e0606b');
     // equipment drops (rolled server-side, 10% per slot)
     if (Array.isArray(m.drops)) {
       let off = 44;
@@ -1304,7 +1327,16 @@ function wireNet() {
     refreshHUD(); refreshActivePanel(); syncProfile();
   });
   on('hurt', m => { G.hp = m.hp; sfx('hit'); refreshHUD(); });
-  on('died', () => { G.hp = 0; if (!G.me.inArena) document.getElementById('deathBanner').classList.remove('hidden'); });
+  on('died', () => {
+    G.hp = 0;
+    if (!G.me.inArena) {
+      // death penalty: lose carried inventory + equipped gear. Keep level, stats and everything banked.
+      G.inv = { iron: 0, meat: 0, wood: 0, plank: 0, ingot: 0, sword: 0, gold: 0, goldingot: 0, goldsword: 0, diamond: 0, diamondsword: 0, cookedmeat: 0, gear: [], items: [] };
+      G.equip = { top: null, bottom: null, weapon: null, shield: null, shoes: null };
+      applyStats(); refreshHUD(); refreshActivePanel(); syncProfile(); G.actions.sendProfile?.();
+      document.getElementById('deathBanner').classList.remove('hidden');
+    }
+  });
   on('revived', m => { G.me.x = m.x; G.me.y = m.y; G.hp = m.hp; G.me.inArena = false; document.getElementById('deathBanner').classList.add('hidden'); refreshHUD(); });
   on('arena', m => { G.arena = m; });
   on('announce', m => showAnnounce(m.text));
