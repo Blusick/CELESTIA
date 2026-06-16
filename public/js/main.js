@@ -1357,7 +1357,7 @@ async function startGame(asGuest) {
   // periodically persist inventory / bank / equipment (wallet players only)
   setInterval(syncProfile, 8000);
   window.addEventListener('beforeunload', syncProfile);
-  document.getElementById('btnTwitter').onclick = () => window.open('https://x.com/LunarissSol/with_replies', '_blank');
+  document.getElementById('btnTwitter').onclick = () => window.open('https://x.com/LunarissSol/', '_blank');
   addChat('', 'Welcome to Central City! Left-click to move · fly your ship across the void to reach the zones · click creatures to fight, nodes to farm.', true);
   addChat('', 'Press Tab for inventory. Locked zones (planets, Exploration) cannot be entered yet.', true);
   refreshHUD();
