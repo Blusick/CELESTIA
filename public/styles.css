@@ -170,7 +170,11 @@ input[type=text],input[type=number],select{font-family:inherit;font-size:9px;pad
 .cta{background:var(--gold);border:3px solid var(--edge);color:#0b1020;border-radius:4px;padding:11px 14px;font-size:13px;font-weight:800;box-shadow:0 4px 0 #0a0f1f;}
 .cta:active{transform:translateY(2px);box-shadow:0 2px 0 #0a0f1f;}
 .cta.sky{background:var(--sky);color:#04223f;}
+.cta.danger{background:var(--red);color:#fff;}
 .muted{color:var(--dim);font-size:8px;line-height:1.7;}
+.destroyx{position:absolute;top:1px;right:2px;width:15px;height:15px;padding:0;line-height:13px;border:none;border-radius:3px;
+  background:rgba(200,40,60,.9);color:#fff;font-size:12px;font-weight:800;cursor:pointer;z-index:3;}
+.destroyx:hover{background:#ff4760;}
 
 /* inventory grid */
 .inv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}

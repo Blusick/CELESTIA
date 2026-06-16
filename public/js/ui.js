@@ -157,13 +157,13 @@ PANELS.inventory = () => {
   const used = G.actions.invCount();
   const slots = res.map(([k, v]) => {
     const eq = EQUIP_OF[k], consume = k === 'cookedmeat', label = k === 'cookedmeat' ? 'cooked' : k;
-    return `<div class="slot${eq ? ' equippable' : ''}${consume ? ' consumable' : ''}" data-item="${k}"${eq ? ' draggable="true"' : ''}${consume ? ` data-consume="${k}"` : ''}><img src="${itemIcon(k)}" style="width:26px;height:26px;image-rendering:auto"><span style="font-size:11px;font-weight:700">${label}</span><b>${v}</b></div>`;
+    return `<div class="slot${eq ? ' equippable' : ''}${consume ? ' consumable' : ''}" data-item="${k}"${eq ? ' draggable="true"' : ''}${consume ? ` data-consume="${k}"` : ''}><button class="destroyx" data-destroyres="${k}" title="Destroy">×</button><img src="${itemIcon(k)}" style="width:26px;height:26px;image-rendering:auto"><span style="font-size:11px;font-weight:700">${label}</span><b>${v}</b></div>`;
   }).join('');
   // stack identical gear (same creature + slot) into one cell with a count
   const groups = {};
   for (const it of (G.inv.gear || [])) { const key = it.slot + '|' + it.src + '|' + it.bonus; (groups[key] ||= []).push(it); }
   const gear = Object.values(groups).map(arr => { const it = arr[0], n = arr.length;
-    return `<div class="slot gearitem" data-gear="${it.id}" draggable="true" title="${gearName(it)} (${gearStat(it)})"><img src="${gearIconURL(it)}" style="width:24px;height:24px;image-rendering:auto"><span style="font-size:9px;font-weight:700;text-align:center;line-height:1.1">${gearName(it)}<br><span style="color:var(--gold)">${gearStat(it)}</span></span>${n > 1 ? `<b>${n}</b>` : ''}</div>`;
+    return `<div class="slot gearitem" data-gear="${it.id}" draggable="true" title="${gearName(it)} (${gearStat(it)})"><button class="destroyx" data-destroygear="${it.id}" title="Destroy">×</button><img src="${gearIconURL(it)}" style="width:24px;height:24px;image-rendering:auto"><span style="font-size:9px;font-weight:700;text-align:center;line-height:1.1">${gearName(it)}<br><span style="color:var(--gold)">${gearStat(it)}</span></span>${n > 1 ? `<b>${n}</b>` : ''}</div>`;
   }).join('');
   const count = res.length + Object.keys(groups).length;
   const pad = Array.from({ length: Math.max(0, 24 - count) }, () => '<div class="slot"></div>').join('');
@@ -231,6 +231,19 @@ WIRE.inventory = (m) => {
     G.inv[k]--; G.actions.heal?.(60); env.toast('+60 HP'); G.actions.syncProfile?.(); openPanel('inventory');
   });
   m.querySelectorAll('.statplus').forEach(b => b.onclick = () => { G.actions.addStatPoint?.(b.dataset.stat); openPanel('inventory'); });
+  // destroy a carried resource stack
+  m.querySelectorAll('[data-destroyres]').forEach(b => b.onclick = (e) => {
+    e.stopPropagation(); const k = b.dataset.destroyres; if ((G.inv[k] || 0) <= 0) return;
+    if (!confirm(`Destroy all ${capw(k)} you are carrying? This cannot be undone.`)) return;
+    G.inv[k] = 0; env.toast(`Destroyed your ${capw(k)}.`); done();
+  });
+  // destroy a carried equipment stack (all identical pieces)
+  m.querySelectorAll('[data-destroygear]').forEach(b => b.onclick = (e) => {
+    e.stopPropagation(); const ref = (G.inv.gear || []).find(g => g.id === b.dataset.destroygear); if (!ref) return;
+    if (!confirm(`Destroy ${gearName(ref)}? This cannot be undone.`)) return;
+    G.inv.gear = G.inv.gear.filter(g => !(g.slot === ref.slot && g.src === ref.src && g.bonus === ref.bonus));
+    env.toast('Equipment destroyed.'); done();
+  });
 };
 
 // ── SHOPS: full commerce only when standing next to the NPC; otherwise a locator ──
@@ -355,24 +368,33 @@ PANELS.colonise = () => nearNpc('colonise') ? planetsPanel() : locatorPanel('col
 WIRE.colonise = (m) => { if (!nearNpc('colonise')) wireLocator(m); };
 
 // ── BANK (Banker James) — store up to 1000 items ────────────
-const BANK_RES = ['iron', 'meat', 'wood', 'plank', 'ingot', 'gold', 'goldingot', 'diamond'];
+const BANK_RES = ['iron', 'meat', 'wood', 'plank', 'ingot', 'gold', 'goldingot', 'diamond', 'cookedmeat', 'sword', 'goldsword', 'diamondsword'];
 function bankCount() { return BANK_RES.reduce((a, k) => a + (G.bank[k] || 0), 0); }
 function bankPanel() {
   const b = G.bank, used = bankCount();
-  const row = k => `<tr><td>${k}</td><td>${G.inv[k] || 0}</td><td>${b[k] || 0}</td>
-    <td><button class="cta sky" data-dep="${k}" style="padding:4px 7px;font-size:7px">Deposit</button>
-        <button class="cta" data-wd="${k}" style="padding:4px 7px;font-size:7px">Withdraw</button></td></tr>`;
+  // only show resources the player actually has (carried or banked) — each with a quantity field
+  const resRows = BANK_RES.filter(k => (G.inv[k] || 0) > 0 || (b[k] || 0) > 0).map(k =>
+    `<tr><td>${capw(k)}</td><td>${G.inv[k] || 0}</td><td>${b[k] || 0}</td>
+      <td style="white-space:nowrap">
+        <input class="bankqty" data-qty="${k}" type="number" min="1" value="1" style="width:46px;font-size:9px;padding:3px;text-align:center;background:#10162b;color:var(--txt);border:2px solid var(--edge);border-radius:3px">
+        <button class="cta sky" data-dep="${k}" style="padding:4px 6px;font-size:7px">Dep</button>
+        <button class="cta" data-wd="${k}" style="padding:4px 6px;font-size:7px">Wd</button>
+        <button class="cta danger" data-destb="${k}" style="padding:4px 6px;font-size:7px"${(b[k] || 0) > 0 ? '' : ' disabled'}>🗑</button></td></tr>`).join('');
+  const body = resRows || `<tr><td colspan="4" class="muted">You have nothing to store yet.</td></tr>`;
   return `${close()}<h2>🏦 Bank <span style="font-size:8px;color:var(--dim)">${used} / 1000</span></h2>
-    <p class="muted"><b>Banker James:</b> "Store your goods safe with me — up to a thousand."</p>
-    <table><thead><tr><th>Item</th><th>On you</th><th>Banked</th><th></th></tr></thead><tbody>
-    ${BANK_RES.map(row).join('')}</tbody></table>
-    <div class="row" style="margin-top:10px"><button class="cta sky" id="bankAll">Deposit all overflow</button></div>`;
+    <p class="muted"><b>Banker James:</b> "Store your goods safe with me — up to a thousand. Set the amount, then Dep(osit) or W(ith)d(raw). Anything banked survives death."</p>
+    <table><thead><tr><th>Item</th><th>On you</th><th>Banked</th><th>Amount</th></tr></thead><tbody>
+    ${body}</tbody></table>
+    <div class="row" style="margin-top:10px;gap:8px"><button class="cta sky" id="bankAllIn">Deposit all</button><button class="cta" id="bankAllOut">Withdraw all</button></div>`;
 }
 function wireBank(m) {
   const refresh = () => { G.actions.refreshHUD(); G.actions.syncProfile?.(); openPanel('bank'); };
-  m.querySelectorAll('[data-dep]').forEach(btn => btn.onclick = () => { const k = btn.dataset.dep; const n = Math.min(G.inv[k] || 0, 1000 - bankCount()); if (n <= 0) return env.toast('Nothing to deposit / bank full.'); G.inv[k] -= n; G.bank[k] = (G.bank[k] || 0) + n; refresh(); });
-  m.querySelectorAll('[data-wd]').forEach(btn => btn.onclick = () => { const k = btn.dataset.wd; const room = G.invMax - G.actions.invCount(); const n = Math.min(G.bank[k] || 0, room); if (n <= 0) return env.toast('Nothing to withdraw / inventory full.'); G.bank[k] -= n; G.inv[k] = (G.inv[k] || 0) + n; refresh(); });
-  m.querySelector('#bankAll').onclick = () => { for (const k of BANK_RES) { const n = Math.min(G.inv[k] || 0, 1000 - bankCount()); if (n > 0) { G.inv[k] -= n; G.bank[k] = (G.bank[k] || 0) + n; } } refresh(); env.toast('Deposited.'); };
+  const qtyFor = k => { const el = m.querySelector(`.bankqty[data-qty="${k}"]`); const v = el ? Math.floor(+el.value) : 1; return v > 0 ? v : 1; };
+  m.querySelectorAll('[data-dep]').forEach(btn => btn.onclick = () => { const k = btn.dataset.dep; const want = qtyFor(k); const n = Math.min(want, G.inv[k] || 0, 1000 - bankCount()); if (n <= 0) return env.toast('Nothing to deposit / bank full.'); G.inv[k] -= n; G.bank[k] = (G.bank[k] || 0) + n; refresh(); });
+  m.querySelectorAll('[data-wd]').forEach(btn => btn.onclick = () => { const k = btn.dataset.wd; const want = qtyFor(k); const room = G.invMax - G.actions.invCount(); const n = Math.min(want, G.bank[k] || 0, room); if (n <= 0) return env.toast('Nothing to withdraw / inventory full.'); G.bank[k] -= n; G.inv[k] = (G.inv[k] || 0) + n; refresh(); });
+  m.querySelectorAll('[data-destb]').forEach(btn => btn.onclick = () => { const k = btn.dataset.destb; if ((G.bank[k] || 0) <= 0) return; if (!confirm(`Destroy all banked ${capw(k)}? This cannot be undone.`)) return; G.bank[k] = 0; refresh(); env.toast(`Destroyed banked ${capw(k)}.`); });
+  m.querySelector('#bankAllIn').onclick = () => { for (const k of BANK_RES) { const n = Math.min(G.inv[k] || 0, 1000 - bankCount()); if (n > 0) { G.inv[k] -= n; G.bank[k] = (G.bank[k] || 0) + n; } } refresh(); env.toast('Deposited everything.'); };
+  m.querySelector('#bankAllOut').onclick = () => { for (const k of BANK_RES) { const room = G.invMax - G.actions.invCount(); const n = Math.min(G.bank[k] || 0, room); if (n > 0) { G.bank[k] -= n; G.inv[k] = (G.inv[k] || 0) + n; } } refresh(); env.toast('Withdrew what fit.'); };
 }
 PANELS.bank = () => nearNpc('bank') ? bankPanel() : locatorPanel('bank');
 WIRE.bank = (m) => nearNpc('bank') ? wireBank(m) : wireLocator(m);

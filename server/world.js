@@ -352,7 +352,7 @@ export function spawnCreatures() {
   const hostile = islandById('hostile');
   const alienCount = hostile ? Math.max(3, Math.round((hostile.w * hostile.h) / 80)) * 2 : 16;
   if (hostile) {
-    const buffed = { ...KINDS.hostile, speed: KINDS.hostile.speed * 2, dmg: KINDS.hostile.dmg * 2, aggro: 6, roam: true };
+    const buffed = { ...KINDS.hostile, hp: KINDS.hostile.hp * 2, speed: KINDS.hostile.speed * 2, dmg: KINDS.hostile.dmg * 2, aggro: 6, roam: true, resist: 2 };   // 2× HP + takes ½ damage
     for (let i = 0; i < alienCount; i++) spawnOne(hostile, buffed, hostile.level, 20000);
   }
   // Exploration Zone: as many green zombies as there are aliens — fast roamers, aggressive

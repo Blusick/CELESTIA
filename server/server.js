@@ -274,7 +274,7 @@ function handle(ws, p, m) {
     }
     case 'chat': {
       const now = Date.now();
-      if (now - p.lastChat < 10000) { send(ws, { type: 'chat', id: 'sys', name: '', text: `Please wait ${Math.ceil((10000 - (now - p.lastChat)) / 1000)}s before sending another message.`, sys: true }); break; }
+      if (now - p.lastChat < 3000) { send(ws, { type: 'chat', id: 'sys', name: '', text: `Please wait ${Math.ceil((3000 - (now - p.lastChat)) / 1000)}s before sending another message.`, sys: true }); break; }
       const text = String(m.text || '').slice(0, 200);
       if (text.trim()) { p.lastChat = now; broadcast({ type: 'chat', id: p.id, name: p.name, text }); }
       break;
@@ -283,7 +283,7 @@ function handle(ws, p, m) {
       const c = W.creatures.get(m.cid);
       if (!c || c.dead) return;
       if (dist(p, c) > 64) return;
-      c.hp -= m.dmg || 8; c.target = p.id; c.aggressive = true;   // provoked → it fights back
+      c.hp -= (m.dmg || 8) / (c.resist || 1); c.target = p.id; c.aggressive = true;   // resist halves damage taken
       if (c.hp <= 0) {
         c.dead = true; c.respawnAt = Date.now() + (c.respawnMs || W.CREATURE_RESPAWN_MS);
         p.xp += c.xp;
