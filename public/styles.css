@@ -79,6 +79,12 @@ button{font-family:inherit;cursor:pointer;}
   margin:0;padding:8px 16px;border-radius:999px;background:rgba(29,155,240,.92);color:#fff;font-weight:800;
   font-size:11px;text-decoration:none;box-shadow:0 4px 16px rgba(29,155,240,.4);}
 .login-x:hover{background:#1a8cd8;}
+/* death / respawn panel (its own card so clicks aren't blocked by the login layout) */
+.death-card{position:relative;z-index:2;pointer-events:auto;background:rgba(10,16,34,.92);
+  border:1px solid rgba(130,160,220,.25);box-shadow:0 14px 50px rgba(0,0,0,.6);
+  padding:30px 40px;text-align:center;border-radius:12px;max-width:90vw;}
+.death-card h2{margin:0 0 10px;}
+.death-sub{color:var(--dim);font-size:10px;line-height:1.6;margin:0 0 22px;}
 
 .btn{display:block;width:240px;max-width:78vw;margin:10px auto;padding:14px;border:none;border-radius:4px;
   font-size:14px;font-weight:800;color:#0b1020;box-shadow:0 5px 0 rgba(0,0,0,.45);transition:transform .05s;}
