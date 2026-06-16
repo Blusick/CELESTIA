@@ -20,6 +20,24 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/api/config', (_req, res) => res.json(publicConfig()));
 app.get('/api/world', (_req, res) => res.json(W.worldDescriptor()));
 
+// ── admin: list of registered players + wallets (protected by ADMIN_KEY) ──
+app.get('/admin/players', (req, res) => {
+  const key = process.env.ADMIN_KEY;
+  if (!key || req.query.key !== key) return res.status(403).send('Forbidden');
+  const profs = W.state.profiles || {};
+  const banned = new Set(W.state.banned || []);
+  const onlineWallets = new Set([...players.values()].map(p => p.wallet).filter(Boolean));
+  const rows = Object.entries(profs).map(([wallet, p]) => ({
+    name: p.name || '?', wallet, level: p.level || 1,
+    online: onlineWallets.has(wallet), banned: banned.has(wallet),
+    lastSeen: p.ts ? new Date(p.ts).toISOString() : ''
+  })).sort((a, b) => (b.level - a.level) || a.name.localeCompare(b.name));
+  if (req.query.format === 'json') return res.json({ total: rows.length, online: onlineWallets.size, players: rows });
+  const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const trs = rows.map(r => `<tr class="${r.banned ? 'ban' : ''}"><td>${r.online ? '🟢' : '⚪'}</td><td>${esc(r.name)}</td><td>${r.level}</td><td><code>${esc(r.wallet)}</code></td><td>${r.banned ? 'BANNED' : ''}</td><td>${esc(r.lastSeen)}</td></tr>`).join('');
+  res.send(`<!doctype html><meta charset="utf-8"><title>CELESTIA players</title><style>body{font-family:system-ui;background:#0b1020;color:#e8eefc;padding:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #243056}code{color:#9fd0ff}tr.ban{color:#ff8a8a}</style><h1>Registered players — ${rows.length} total · ${onlineWallets.size} online</h1><table><tr><th></th><th>Name</th><th>Lvl</th><th>Wallet</th><th></th><th>Last seen (UTC)</th></tr>${trs}</table>`);
+});
+
 // Solana RPC proxy — the public mainnet RPC blocks browser CORS (403),
 // so the client routes JSON-RPC through the server instead.
 app.post('/api/rpc', async (req, res) => {
