@@ -626,10 +626,12 @@ function render() {
     if (p.inAir && p.moving) spawnSmoke(p.x, p.y);
     drawNameTag(p);
     S.drawPlayer(ctx, p.x, p.y, p.appearance, p.dir, p.moving ? (frameT >> 2) : 0, p.inAir, p.ship, p.gear);
+    if (p.say && performance.now() < p.sayUntil) drawSpeechBubble(p.x, p.y - 30, p.say);
   }
   if (G.me.inAir && G.me.moving) spawnSmoke(G.me.x, G.me.y);
   drawNameTag({ name: G.me.name || 'You', x: G.me.x, y: G.me.y, level: G.level });
   S.drawPlayer(ctx, G.me.x, G.me.y, G.appearance, G.me.dir, G.me.moving ? (frameT >> 2) : 0, G.me.inAir, G.ship, gearVis());
+  if (G.me.say && performance.now() < G.me.sayUntil) drawSpeechBubble(G.me.x, G.me.y - 30, G.me.say);
   drawLocator();   // NPC beacon + guide line
   // sword swing on farm / combat
   if (swing > 0 && !G.me.inAir) {
@@ -1091,6 +1093,13 @@ function drawSpeechBubble(cx, by, text) {
   ctx.beginPath(); ctx.moveTo(cx - 3, by - 1); ctx.lineTo(cx + 3, by - 1); ctx.lineTo(cx, by + 4); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#1a1a2a'; ctx.fillText(text, x0 + 6, y0 + 10); ctx.textAlign = 'center';
 }
+// attach a chat message above a player's head (like NPC speech) for a few seconds
+function showOverhead(id, text) {
+  if (!id || id === 'sys' || !text) return;
+  const t = text.length > 60 ? text.slice(0, 57) + '…' : text;
+  const ent = (G.me && id === G.me.id) ? G.me : G.players.get(id);
+  if (ent) { ent.say = t; ent.sayUntil = performance.now() + 5500; }
+}
 // ── beacon: blinking marker + guide line toward an NPC the player asked to find ──
 function drawLocator() {
   if (!G.locate || !G.me) return;
@@ -1303,7 +1312,7 @@ function wireNet() {
   on('arenaDenied', m => toast('🔒 ' + (m.reason || 'Entry refused.'), 4000));
   on('tiles', m => { for (const t of m.tiles) G.tiles[tileKey(t.x, t.y)] = { ...t }; });
   on('market', m => { G.market = m.market; refreshActivePanel(); });
-  on('chat', m => addChat(m.name, m.text));
+  on('chat', m => { addChat(m.name, m.text); showOverhead(m.id, m.text); });
   on('whisper', m => addChat(m.from, m.text, false, true));
   on('whisperFail', m => addChat('', `No player named "${m.to}" is online.`, true));
 }

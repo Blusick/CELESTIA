@@ -140,12 +140,12 @@ button{font-family:inherit;cursor:pointer;}
 .chat-tabs button.active{color:#fff;background:rgba(16,22,43,.9);}
 .chat-tabs .unread{display:none;width:6px;height:6px;border-radius:50%;background:#c79bff;vertical-align:middle;margin-left:3px;}
 .chat-tabs .unread.on{display:inline-block;}
-.chat-log{height:150px;overflow-y:auto;background:rgba(16,22,43,.7);border:3px solid var(--edge);border-radius:0;
-  padding:8px;font-size:8px;line-height:1.8;display:flex;flex-direction:column;gap:2px;}
+.chat-log{height:160px;overflow-y:auto;background:rgba(16,22,43,.7);border:3px solid var(--edge);border-radius:0;
+  padding:8px;font-size:12px;line-height:1.6;display:flex;flex-direction:column;gap:3px;}
 .chat-log .who{color:var(--sky);}
 .chat-log .sys{color:var(--gold);}
 .chat-input{display:flex;}
-.chat-input input{flex:1;font-family:inherit;font-size:8px;padding:9px;background:var(--panel);
+.chat-input input{flex:1;font-family:inherit;font-size:12px;padding:9px;background:var(--panel);
   border:3px solid var(--edge);border-top:none;border-radius:0 0 5px 5px;color:var(--txt);outline:none;}
 
 /* resource tray */
