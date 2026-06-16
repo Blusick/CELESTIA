@@ -1,4 +1,4 @@
-# 🛸 Skyland
+# 🛸 Lunaris
 
 A pixel-art **MMO in the sky** — inspired by [islands.games](https://islands.games/), reimagined among floating islands and spaceships. Built with a Node.js multiplayer server and a Canvas client. Powered by **Phantom** + the **$SKY** Solana token.
 
@@ -64,7 +64,7 @@ Change the token CA or treasury at any time — restart the server and the clien
 ## Project layout
 
 ```
-Skyland/
+Lunaris/
 ├── .env / .env.example      # config (token CA, treasury, prices)
 ├── server/
 │   ├── server.js            # HTTP + WebSocket MMO server & game loop

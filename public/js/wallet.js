@@ -1,4 +1,4 @@
-// ── Phantom wallet + real $CELESTIA (SPL) transfers ──────────────
+// ── Phantom wallet + real $Lunaris (SPL) transfers ──────────────
 import {
   Connection, PublicKey, Transaction,
 } from 'https://esm.sh/@solana/web3.js@1.95.4';
@@ -40,7 +40,7 @@ export async function disconnect() {
   wallet.connected = false; wallet.pubkey = null;
 }
 
-// Find the user's actual $CELESTIA token account(s) for the mint (handles
+// Find the user's actual $Lunaris token account(s) for the mint (handles
 // non-ATA accounts and Token-2022) → returns {pubkey, decimals, programId, raw}.
 async function findSkySource() {
   const mint = new PublicKey(wallet.cfg.skyMint);
@@ -52,7 +52,7 @@ async function findSkySource() {
       let best = resp.value[0];
       for (const v of resp.value) if (BigInt(v.account.data.parsed.info.tokenAmount.amount) > BigInt(best.account.data.parsed.info.tokenAmount.amount)) best = v;
       const info = best.account.data.parsed.info.tokenAmount;
-      console.log('[pay] source via owner-accounts:', best.pubkey.toString(), info.uiAmount, '$CELESTIA');
+      console.log('[pay] source via owner-accounts:', best.pubkey.toString(), info.uiAmount, '$Lunaris');
       return { pubkey: best.pubkey, decimals: info.decimals, programId: new PublicKey(best.account.owner), ui: info.uiAmount || 0 };
     }
   } catch (e) { console.warn('[pay] getParsedTokenAccountsByOwner failed:', e.message); }
@@ -60,7 +60,7 @@ async function findSkySource() {
   try {
     const ata = await getAssociatedTokenAddress(mint, owner);
     const acc = await getAccount(wallet.conn, ata);
-    console.log('[pay] source via ATA:', ata.toString(), Number(acc.amount) / 10 ** wallet.cfg.skyDecimals, '$CELESTIA');
+    console.log('[pay] source via ATA:', ata.toString(), Number(acc.amount) / 10 ** wallet.cfg.skyDecimals, '$Lunaris');
     return { pubkey: ata, decimals: wallet.cfg.skyDecimals, programId: TOKEN_PROGRAM_ID, ui: Number(acc.amount) / 10 ** wallet.cfg.skyDecimals };
   } catch (e) { console.warn('[pay] ATA fallback failed:', e.message); }
   return null;
@@ -76,7 +76,7 @@ export async function skyBalance() {
   } catch (e) { console.warn('balance error', e); return 0; }
 }
 
-// Build, sign (Phantom) and send a $CELESTIA transfer to one or more recipients.
+// Build, sign (Phantom) and send a $Lunaris transfer to one or more recipients.
 // recipients = [{ owner: base58, amount: wholeTokens }]
 export async function payMany(recipients) {
   const p = provider();
@@ -85,7 +85,7 @@ export async function payMany(recipients) {
   const from = new PublicKey(wallet.pubkey);
 
   const src = await findSkySource();
-  if (!src) throw new Error('No $CELESTIA token account found in your wallet.');
+  if (!src) throw new Error('No $Lunaris token account found in your wallet.');
   const { pubkey: fromAta, decimals, programId } = src;
 
   console.log('[pay] source', fromAta.toString(), 'decimals', decimals, 'program', programId.toString());

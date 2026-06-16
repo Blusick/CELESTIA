@@ -1,4 +1,4 @@
-// ── Skyland client: engine, render, input, gameplay ─────────
+// ── Lunaris client: engine, render, input, gameplay ─────────
 import { G, tileKey, xpForLevel } from './state.js';
 import * as S from './sprites.js';
 import { net, on, connectWS, send, api } from './net.js';
@@ -477,7 +477,7 @@ function confirmBuy() {
 // called by the Buy panel's Pay button (a user gesture → Phantom opens)
 G.payForTerritory = async (tiles, texture) => {
   const total = tiles.length * wallet.cfg.territoryPrice;
-  toast(`Approve ${total.toLocaleString()} $CELESTIA in Phantom…`, 8000);
+  toast(`Approve ${total.toLocaleString()} $Lunaris in Phantom…`, 8000);
   let signature;
   try { signature = await payTreasury(total); }
   catch (e) { toast('Payment cancelled: ' + (e.message || e)); return; }
@@ -805,7 +805,7 @@ function drawArena(isl, t) {
   // arena texts: header inside top, countdown inside bottom (symmetric)
   const a = G.arena || {}; ctx.textAlign = 'center';
   ctx.font = '22px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#3a2614'; ctx.fillText('⚔ ARENA', cx, cy - hh * 0.40);
-  ctx.font = '18px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#1f8f4d'; ctx.fillText('1M $CELESTIA for the Winner', cx, cy - hh * 0.40 + 20);
+  ctx.font = '18px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#1f8f4d'; ctx.fillText('1M $Lunaris for the Winner', cx, cy - hh * 0.40 + 20);
   ctx.font = '28px "Vanilla Caramel", sans-serif';
   if (a.phase === 'battle') { ctx.fillStyle = '#b02030'; ctx.fillText('BATTLE  ' + fmtTime(a.remaining || 0), cx, cy + hh * 0.44); }
   else { ctx.fillStyle = '#5a3a1a'; ctx.fillText('Next: ' + fmtTime(a.remaining || 0), cx, cy + hh * 0.44); if (a.winner) { ctx.font = '12px "Vanilla Caramel", sans-serif'; ctx.fillStyle = '#2f7a32'; ctx.fillText('🏆 ' + a.winner, cx, cy + hh * 0.44 - 18); } }
@@ -1068,7 +1068,7 @@ function drawNameTag(p, color) {
 }
 // ── NPC automatic speech (every 20s, visible for 10s) ──
 const NPC_LINES = {
-  bank: ['Deposit your loot before the Arena!', 'Your $CELESTIA is safe with me.'],
+  bank: ['Deposit your loot before the Arena!', 'Your $Lunaris is safe with me.'],
   alchemist: ['Potions brewing — mind the fumes!', 'Need a strength elixir?'],
   marketplace: ['Buy low, sell high, pilot!', 'Fresh goods from the void!'],
   guardian: ['None pass without tribute.', 'The Arena awaits the brave.'],
@@ -1108,7 +1108,7 @@ function drawBuyHint() {
   const n = selectedTiles().filter(t => isAir(t.x, t.y)).length;
   const el = document.getElementById('toast');
   el.classList.remove('hidden');
-  el.textContent = `${n} tile(s) · ${(n * (wallet.cfg?.territoryPrice || 10000)).toLocaleString()} $CELESTIA — release to buy`;
+  el.textContent = `${n} tile(s) · ${(n * (wallet.cfg?.territoryPrice || 10000)).toLocaleString()} $Lunaris — release to buy`;
 }
 
 // twinkling starfield + drifting nebula backdrop
@@ -1332,9 +1332,9 @@ const esc = s => s.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&am
 // ── balance ─────────────────────────────────────────────────
 async function refreshBalance() {
   const el = document.getElementById('balance'); if (!el) return;
-  if (!wallet.connected) { el.textContent = '— $CELESTIA'; return; }
+  if (!wallet.connected) { el.textContent = '— $Lunaris'; return; }
   const b = await skyBalance();
-  el.textContent = Math.floor(b).toLocaleString() + ' $CELESTIA';
+  el.textContent = Math.floor(b).toLocaleString() + ' $Lunaris';
 }
 
 function syncProfile() { if (wallet.pubkey) send({ type: 'sync', inv: G.inv, bank: G.bank, equip: G.equip, level: G.level, xp: G.xp, xpNeed: G.xpNeed, maxHp: G.maxHp, stats: G.stats, statPoints: G.statPoints, res: effStat('resistance'), ownedShips: G.ownedShips, ship: G.ship }); }

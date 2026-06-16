@@ -96,11 +96,11 @@ export function openBuyPanel(tiles, total) {
   const m = document.createElement('div'); m.className = 'modal'; back.appendChild(m); root().appendChild(back);
   let chosen = 'grass';
   m.innerHTML = `${close('Cancel')}<h2>🪙 Buy Territory</h2>
-    <p class="muted">${tiles.length} tile(s) · total <b style="color:var(--gold)">${total.toLocaleString()} $CELESTIA</b>. Choose the floor before paying:</p>
+    <p class="muted">${tiles.length} tile(s) · total <b style="color:var(--gold)">${total.toLocaleString()} $Lunaris</b>. Choose the floor before paying:</p>
     <div class="row" id="terr" style="margin:8px 0 14px">
       ${TERRAINS.map((t, i) => `<div class="ptile ${i === 0 ? 'sel' : ''}" data-t="${t.id}"><div class="sw" style="background:${t.sw}"></div>${t.name}</div>`).join('')}
     </div>
-    <button class="cta sky" id="payBtn">Pay ${total.toLocaleString()} $CELESTIA in Phantom</button>`;
+    <button class="cta sky" id="payBtn">Pay ${total.toLocaleString()} $Lunaris in Phantom</button>`;
   m.querySelectorAll('[data-t]').forEach(p => p.onclick = () => { chosen = p.dataset.t; m.querySelectorAll('[data-t]').forEach(x => x.classList.remove('sel')); p.classList.add('sel'); });
   m.querySelector('#payBtn').onclick = () => G.payForTerritory(tiles, chosen);
 }
@@ -245,22 +245,22 @@ function wireLocator(m) { const b = m.querySelector('[data-locate]'); if (b) b.o
 // ── MARKETPLACE (Trader Joe) ─────────────────────────────────
 function marketPanel() {
   const rows = G.market.length ? G.market.map(l => `
-    <tr><td>${l.resource}</td><td>${l.qty}</td><td>${l.price} $CELESTIA</td><td>${(l.price * l.qty).toLocaleString()}</td>
+    <tr><td>${l.resource}</td><td>${l.qty}</td><td>${l.price} $Lunaris</td><td>${(l.price * l.qty).toLocaleString()}</td>
     <td>${l.seller === wallet.pubkey ? '<i>yours</i>' : `<button class="cta sky" data-buy="${l.id}" style="padding:5px 8px;font-size:7px">Buy</button>`}</td></tr>`).join('')
     : '<tr><td colspan="5" class="muted">No listings yet.</td></tr>';
   return `${close()}<h2>🛒 Marketplace</h2>
     <p class="muted"><b>Trader Joe:</b> "Buy low, sell high, pilot."</p>
     <div class="grid" style="border:2px solid var(--edge);border-radius:5px;padding:10px;margin-bottom:14px">
-      <b style="font-size:9px;color:var(--gold)">Sell resources for $CELESTIA</b>
+      <b style="font-size:9px;color:var(--gold)">Sell resources for $Lunaris</b>
       <div class="row">
         <div class="field"><label>Resource</label><select id="mRes"><option>iron</option><option>meat</option><option>wood</option><option>plank</option><option>ingot</option><option>gold</option><option>goldingot</option></select></div>
         <div class="field"><label>Quantity</label><input id="mQty" type="number" min="1" value="10" style="width:80px"></div>
-        <div class="field"><label>Price / unit ($CELESTIA)</label><input id="mPrice" type="number" min="1" value="100" style="width:90px"></div>
+        <div class="field"><label>Price / unit ($Lunaris)</label><input id="mPrice" type="number" min="1" value="100" style="width:90px"></div>
         <button class="cta" id="mList" style="align-self:flex-end">List</button>
       </div>
     </div>
     <table><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Total</th><th></th></tr></thead><tbody>${rows}</tbody></table>
-    <p class="muted">Buying pays the seller in $CELESTIA (+${((wallet.cfg?.marketplaceFee || 0.02) * 100)}% treasury fee) through Phantom.</p>`;
+    <p class="muted">Buying pays the seller in $Lunaris (+${((wallet.cfg?.marketplaceFee || 0.02) * 100)}% treasury fee) through Phantom.</p>`;
 }
 function wireMarket(m) {
   m.querySelector('#mList').onclick = async () => {
@@ -276,7 +276,7 @@ function wireMarket(m) {
     const l = G.market.find(x => x.id === b.dataset.buy); if (!l) return;
     if (G.guest || !wallet.connected) return env.toast('Connect Phantom to buy.');
     const total = l.price * l.qty, fee = total * (wallet.cfg.marketplaceFee || 0.02);
-    env.toast(`Approve ${total.toLocaleString()} $CELESTIA in Phantom…`, 6000);
+    env.toast(`Approve ${total.toLocaleString()} $Lunaris in Phantom…`, 6000);
     try {
       const sig = await payMany([{ owner: l.seller, amount: total - fee }, { owner: wallet.cfg.treasury, amount: fee }]);
       const r = await api('/api/market/buy', { signature: sig, wallet: wallet.pubkey, listingId: l.id });

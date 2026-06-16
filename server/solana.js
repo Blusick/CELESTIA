@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────
-//  On-chain verification of $CELESTIA (SPL) payments to the treasury.
+//  On-chain verification of $Lunaris (SPL) payments to the treasury.
 //  The client builds + signs + sends a transfer via Phantom, then
 //  hands us the signature. We confirm it on-chain and check that
-//  the treasury's $CELESTIA balance rose by at least the expected amount.
+//  the treasury's $Lunaris balance rose by at least the expected amount.
 // ─────────────────────────────────────────────────────────────
 import { Connection, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
@@ -12,7 +12,7 @@ const connection = new Connection(config.SOLANA_RPC_URL, 'confirmed');
 const MINT = new PublicKey(config.SKY_TOKEN_MINT);
 const TREASURY = new PublicKey(config.TREASURY_WALLET);
 
-// Treasury's associated token accounts (classic Token + Token-2022) for $CELESTIA.
+// Treasury's associated token accounts (classic Token + Token-2022) for $Lunaris.
 let treasuryAtas = null;
 async function getTreasuryAtas() {
   if (!treasuryAtas) {
@@ -68,7 +68,7 @@ export async function verifyPayment(signature, minAmount, expectedFrom) {
   if (received + 1e-9 < minAmount) {
     const hadBalances = (tx.meta?.postTokenBalances || []).length > 0;
     console.warn(`[pay] verify failed: received ${received}, expected >= ${minAmount}; tokenBalancesInTx=${hadBalances ? 'yes' : 'NO (RPC returned no token meta — set a dedicated SOLANA_RPC_URL)'}`);
-    return { ok: false, error: `treasury received ${received} $CELESTIA, expected >= ${minAmount}` };
+    return { ok: false, error: `treasury received ${received} $Lunaris, expected >= ${minAmount}` };
   }
 
   if (expectedFrom) {

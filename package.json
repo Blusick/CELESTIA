@@ -1,7 +1,7 @@
 {
   "name": "skyland",
   "version": "0.1.0",
-  "description": "Skyland - a pixel-art MMO in the sky. Phantom/Solana ($SKY) powered.",
+  "description": "Lunaris - a pixel-art MMO in the sky. Phantom/Solana ($SKY) powered.",
   "type": "module",
   "main": "server/server.js",
   "scripts": {

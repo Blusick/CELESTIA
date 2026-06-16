@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  Skyland server: static hosting + REST + realtime MMO loop.
+//  Lunaris server: static hosting + REST + realtime MMO loop.
 // ─────────────────────────────────────────────────────────────
 import express from 'express';
 import http from 'http';
@@ -35,7 +35,7 @@ app.get('/admin/players', (req, res) => {
   if (req.query.format === 'json') return res.json({ total: rows.length, online: onlineWallets.size, players: rows });
   const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const trs = rows.map(r => `<tr class="${r.banned ? 'ban' : ''}"><td>${r.online ? '🟢' : '⚪'}</td><td>${esc(r.name)}</td><td>${r.level}</td><td><code>${esc(r.wallet)}</code></td><td>${r.banned ? 'BANNED' : ''}</td><td>${esc(r.lastSeen)}</td></tr>`).join('');
-  res.send(`<!doctype html><meta charset="utf-8"><title>CELESTIA players</title><style>body{font-family:system-ui;background:#0b1020;color:#e8eefc;padding:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #243056}code{color:#9fd0ff}tr.ban{color:#ff8a8a}</style><h1>Registered players — ${rows.length} total · ${onlineWallets.size} online</h1><table><tr><th></th><th>Name</th><th>Lvl</th><th>Wallet</th><th></th><th>Last seen (UTC)</th></tr>${trs}</table>`);
+  res.send(`<!doctype html><meta charset="utf-8"><title>LUNARIS players</title><style>body{font-family:system-ui;background:#0b1020;color:#e8eefc;padding:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #243056}code{color:#9fd0ff}tr.ban{color:#ff8a8a}</style><h1>Registered players — ${rows.length} total · ${onlineWallets.size} online</h1><table><tr><th></th><th>Name</th><th>Lvl</th><th>Wallet</th><th></th><th>Last seen (UTC)</th></tr>${trs}</table>`);
 });
 
 // Solana RPC proxy — the public mainnet RPC blocks browser CORS (403),
@@ -89,7 +89,7 @@ app.post('/api/edit-tile', (req, res) => {
   res.json({ ok: true, tile });
 });
 
-// Marketplace: create a listing (resources for $CELESTIA).
+// Marketplace: create a listing (resources for $Lunaris).
 app.post('/api/market/list', (req, res) => {
   const { wallet, resource, qty, price } = req.body || {};
   if (!['iron', 'meat', 'wood', 'plank', 'ingot'].includes(resource)) return res.json({ ok: false, error: 'bad resource' });
@@ -442,8 +442,8 @@ function xpForLevel(lvl) { return (50 + lvl * 45) * 3; }   // 3× harder to leve
 W.loadState();
 W.spawnCreatures();
 server.listen(config.PORT, () => {
-  console.log(`\n  🛸  CELESTIA running → http://localhost:${config.PORT}`);
-  console.log(`      $CELESTIA mint:  ${config.SKY_TOKEN_MINT}`);
+  console.log(`\n  🛸  LUNARIS running → http://localhost:${config.PORT}`);
+  console.log(`      $Lunaris mint:  ${config.SKY_TOKEN_MINT}`);
   console.log(`      treasury:   ${config.TREASURY_WALLET}`);
   console.log(`      cluster:    ${config.SOLANA_CLUSTER}\n`);
 });

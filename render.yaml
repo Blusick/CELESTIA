@@ -1,4 +1,4 @@
-# Render Blueprint — deploy CELESTIA as a Node web service (WebSocket-capable)
+# Render Blueprint — deploy LUNARIS as a Node web service (WebSocket-capable)
 # Render injects PORT automatically; the server reads it via process.env.PORT.
 services:
   - type: web

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  Skyland world — a Central City hub ringed by themed zones,
+//  Lunaris world — a Central City hub ringed by themed zones,
 //  linked by bridges across open space. Organic island shapes.
 //  Coordinates are in TILES unless suffixed _px.
 // ─────────────────────────────────────────────────────────────
