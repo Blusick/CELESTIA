@@ -79,6 +79,10 @@ button{font-family:inherit;cursor:pointer;}
   margin:0;padding:8px 16px;border-radius:999px;background:rgba(29,155,240,.92);color:#fff;font-weight:800;
   font-size:11px;text-decoration:none;box-shadow:0 4px 16px rgba(29,155,240,.4);}
 .login-x:hover{background:#1a8cd8;}
+/* when a custom background art is loaded, the art already shows the title — hide the text logo and drop the fields onto the lower-centre */
+#login.has-bg .logo,#login.has-bg .logo-rule{display:none;}
+#login.has-bg .login-card{justify-content:center;padding-top:0;}
+#login.has-bg .login-fields{margin-top:clamp(70px,17vh,210px);}
 /* death / respawn panel (its own card so clicks aren't blocked by the login layout) */
 .death-card{position:relative;z-index:2;pointer-events:auto;background:rgba(10,16,34,.92);
   border:1px solid rgba(130,160,220,.25);box-shadow:0 14px 50px rgba(0,0,0,.6);

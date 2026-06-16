@@ -1504,6 +1504,12 @@ function initLoginBg() {
   const resize = () => { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; c.setTransform(dpr, 0, 0, dpr, 0, 0); build(); };
   resize(); addEventListener('resize', resize);
 
+  // optional custom background art (drop /assets/lunaris-bg.jpg or .png). Falls back to the animated scene.
+  const bgImg = new Image(); let bgReady = false; let bgTried = 0;
+  bgImg.onload = () => { bgReady = true; document.getElementById('login')?.classList.add('has-bg'); };
+  bgImg.onerror = () => { bgTried++; if (bgTried === 1) bgImg.src = '/assets/lunaris-bg.png'; };
+  bgImg.src = '/assets/lunaris-bg.jpg';
+
   // shooting stars
   const shooters = []; let nextShot = 0;
   function spawnShot() {
@@ -1522,6 +1528,27 @@ function initLoginBg() {
     const login = document.getElementById('login');
     if (!login || login.classList.contains('hidden')) return;     // stop once the game starts
     const t = (now - t0) / 1000, dt = Math.min(0.05, (now - last) / 1000); last = now;
+
+    // ── custom background art (if present): cover-fit + moving shooting stars on top ──
+    if (bgReady) {
+      const ir = bgImg.width / bgImg.height, cr = W / H;
+      let dw = W, dh = H, dx = 0, dy = 0;
+      if (ir > cr) { dh = H; dw = H * ir; dx = (W - dw) / 2; } else { dw = W; dh = W / ir; dy = (H - dh) / 2; }
+      c.drawImage(bgImg, dx, dy, dw, dh);
+      if (t > nextShot) { spawnShot(); if (Math.random() < 0.3) spawnShot(); nextShot = t + rnd(0.8, 2.2); }
+      for (let i = shooters.length - 1; i >= 0; i--) {
+        const sh = shooters[i]; sh.life += dt; sh.x += sh.vx * dt; sh.y += sh.vy * dt;
+        const k = sh.life / sh.max; if (k >= 1 || sh.y > H * 0.95) { shooters.splice(i, 1); continue; }
+        const fade = k < 0.15 ? k / 0.15 : (1 - k);
+        const ux = sh.vx / Math.hypot(sh.vx, sh.vy), uy = sh.vy / Math.hypot(sh.vx, sh.vy);
+        const tx = sh.x - ux * sh.len, ty = sh.y - uy * sh.len;
+        const tg = c.createLinearGradient(sh.x, sh.y, tx, ty);
+        tg.addColorStop(0, `rgba(255,255,255,${0.9 * fade})`); tg.addColorStop(0.4, `rgba(200,220,255,${0.4 * fade})`); tg.addColorStop(1, 'rgba(180,205,255,0)');
+        c.strokeStyle = tg; c.lineWidth = 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(sh.x, sh.y); c.lineTo(tx, ty); c.stroke();
+        c.fillStyle = `rgba(255,255,255,${0.95 * fade})`; c.beginPath(); c.arc(sh.x, sh.y, 1.8, 0, 7); c.fill();
+      }
+      requestAnimationFrame(frame); return;
+    }
 
     // ── sky (full height — just the starry night, no ground) ──
     const sky = c.createLinearGradient(0, 0, 0, H);
