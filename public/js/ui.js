@@ -170,16 +170,16 @@ PANELS.inventory = () => {
       <div style="text-align:center">
         <canvas id="doll" width="104" height="132" style="image-rendering:pixelated;background:#10162b;border:3px solid var(--edge);border-radius:6px"></canvas>
         <div class="equips">${EQUIP_SLOTS.map(eqSlotHTML).join('')}</div>
+        <div class="stats" style="width:150px;text-align:left">
+          <div class="statshead">Stat points: <b style="color:var(--gold)">${G.statPoints || 0}</b></div>
+          ${[['health', 'Health'], ['strength', 'Strength'], ['agility', 'Agility'], ['resistance', 'Resistance']].map(([k, l]) =>
+            `<div class="statrow"><span style="flex:1">${l}</span><b>${G.stats?.[k] || 0}</b><button class="statplus" data-stat="${k}"${(G.statPoints || 0) > 0 ? '' : ' disabled'}>+</button></div>`).join('')}
+          <p class="muted" style="margin-top:6px">+5 points per level. Health +1 HP · Strength +1 dmg/2 · Agility +1 speed/2 · Resistance reduces damage.</p>
+        </div>
       </div>
       <div style="flex:1">
         <div class="inv">${slots}${gear}${pad}</div>
         <p class="muted">Double-click or drag an item onto a slot to equip it. To unequip, double-click the slot or drag it back here. Double-click Cooked Meat to restore 60 HP.</p>
-        <div class="stats">
-          <div class="statshead">Stat points to spend: <b style="color:var(--gold)">${G.statPoints || 0}</b></div>
-          ${[['health', 'Health'], ['strength', 'Strength'], ['agility', 'Agility'], ['resistance', 'Resistance']].map(([k, l]) =>
-            `<div class="statrow"><span>${l}</span><b>${G.stats?.[k] || 0}</b><button class="statplus" data-stat="${k}"${(G.statPoints || 0) > 0 ? '' : ' disabled'}>+</button></div>`).join('')}
-          <p class="muted" style="margin-top:6px">+5 points per level. Health +1 HP · Strength +1 dmg / 2 · Agility +1 speed / 2 · Resistance reduces damage.</p>
-        </div>
       </div>
     </div>`;
 };
