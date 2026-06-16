@@ -1410,14 +1410,30 @@ G.actions = {
 function chosenUsername() { return (document.getElementById('userName')?.value || '').trim().slice(0, 16); }
 function chosenWallet() { return (document.getElementById('userWallet')?.value || '').trim(); }
 const isSolAddr = a => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+const SAVED_KEY = 'lunaris_profile';
+function loginWith(name, w) {
+  G.chosenName = name;
+  wallet.pubkey = w;                        // players are identified by their entered wallet (no on-chain signing yet)
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify({ name, wallet: w })); } catch {}   // remember across refreshes
+  G.guest = true; startGame(true);
+}
 document.getElementById('btnGuest').onclick = async () => {
   if (!chosenUsername()) return toast('Please choose a username first.');
   const w = chosenWallet();
   if (!isSolAddr(w)) return toast('Enter a valid Solana wallet address to play as guest.');
-  G.chosenName = chosenUsername();
-  wallet.pubkey = w;                        // players are identified by their entered wallet (no on-chain signing yet)
-  G.guest = true; startGame(true);
+  loginWith(chosenUsername(), w);
 };
+// auto-reconnect a returning player with the last profile they used (Leave clears it)
+(function autoLogin() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVED_KEY) || 'null');
+    if (s && s.name && isSolAddr(s.wallet)) {
+      document.getElementById('userName').value = s.name;
+      document.getElementById('userWallet').value = s.wallet;
+      loginWith(s.name, s.wallet);
+    }
+  } catch {}
+})();
 document.getElementById('btnChat').onclick = () => document.getElementById('chat').classList.toggle('hidden');
 document.getElementById('btnBuyTerritory').onclick = () => toast('🔒 Buy Territory is locked for now.');
 document.getElementById('btnHome').onclick = () => { if (G.me) { camMode = 'follow'; setZoom(2); updateCamera(); exitModes(); openPanel(null); } };
@@ -1429,6 +1445,7 @@ document.getElementById('btnSound').onclick = () => {
 document.getElementById('btnRespawn').onclick = () => send({ type: 'respawn' });
 document.getElementById('btnDisconnect').onclick = async () => {
   try { syncProfile(); } catch {}                                   // persist progress before leaving
+  try { localStorage.removeItem(SAVED_KEY); } catch {}              // forget the saved profile so refresh returns to login
   try { if (wallet.connected) await walletDisconnect(); } catch {}
   setTimeout(() => location.reload(), 120);                          // back to the login screen
 };
